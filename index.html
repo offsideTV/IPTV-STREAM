@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>IPTV — Premium</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; background: #000; color: #fff; }
+        body { font-family: system-ui, -apple-system, sans-serif; -webkit-user-select: none; user-select: none; }
+
+        #video {
+            position: fixed; inset: 0; width: 100%; height: 100%;
+            object-fit: cover; z-index: 1; background: #000;
+        }
+
+        #loader {
+            position: fixed; inset: 0; z-index: 50;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.72); backdrop-filter: blur(10px);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #loader.visible { opacity: 1; pointer-events: auto; }
+        .spinner {
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.1); border-top-color: #fff;
+            animation: spin 0.75s linear infinite;
+        }
+        #loader-label { margin-top: 1rem; font-size: 0.8rem; color: rgba(255,255,255,0.45); letter-spacing: 0.05em; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #error-state {
+            position: fixed; inset: 0; z-index: 45;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 0.6rem;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(10px);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #error-state.visible { opacity: 1; }
+        .err-icon { font-size: 2rem; opacity: 0.5; }
+        .err-text { font-size: 0.9rem; color: rgba(255,255,255,0.5); }
+
+        #osd {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+            padding: 2rem 2.5rem 5rem;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.88) 0%, transparent 100%);
+            display: flex; align-items: flex-start; justify-content: space-between;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        #osd.visible { opacity: 1; pointer-events: auto; }
+
+        .osd-left { display: flex; align-items: flex-start; gap: 1.25rem; }
+
+        #osd-logo {
+            width: 64px; height: 64px; border-radius: 14px;
+            object-fit: contain; background: rgba(255,255,255,0.08);
+            padding: 8px; flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .live-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; color: #f87171; margin-bottom: 5px;
+        }
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%; background: #ef4444;
+            animation: blink 1.4s ease infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+        #osd-title {
+            font-size: clamp(1.8rem, 4.5vw, 3.2rem);
+            font-weight: 800; line-height: 1; letter-spacing: -0.03em;
+        }
+        #osd-source-label {
+            font-size: 0.75rem; color: rgba(255,255,255,0.35);
+            margin-top: 6px; font-weight: 500;
+        }
+
+        #source-switcher { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+        .src-btn {
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+            text-transform: uppercase; padding: 4px 10px;
+            border-radius: 6px; border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
+            cursor: pointer; transition: all 0.15s ease;
+        }
+        .src-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+        .src-btn.active { background: rgba(255,255,255,0.22); color: #fff; border-color: rgba(255,255,255,0.45); }
+
+        .osd-actions { display: flex; align-items: flex-start; gap: 0.5rem; padding-top: 4px; }
+        .osd-btn {
+            display: flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; border-radius: 10px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+            cursor: pointer; color: #fff;
+            transition: background 0.15s ease, transform 0.1s ease;
+        }
+        .osd-btn:hover { background: rgba(255,255,255,0.2); }
+        .osd-btn:active { transform: scale(0.93); }
+        .osd-btn svg { width: 18px; height: 18px; }
+
+        #ui {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+            padding: 6rem 2rem 1.75rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.96) 35%, transparent 100%);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        #ui.visible { opacity: 1; pointer-events: auto; }
+
+        .ui-header {
+            display: flex; align-items: flex-end; justify-content: space-between;
+            margin-bottom: 1rem; padding: 0 0.2rem;
+        }
+        .ui-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
+        .ui-hint { font-size: 0.72rem; color: rgba(255,255,255,0.35); margin-top: 2px; }
+        .brand { font-size: 0.9rem; font-weight: 800; letter-spacing: -0.04em; color: rgba(255,255,255,0.85); }
+        .brand em { color: rgba(255,255,255,0.3); font-style: normal; }
+
+        #carousel {
+            display: flex; gap: 0.9rem;
+            overflow-x: auto; scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+            padding-bottom: 2px;
+            scrollbar-width: none;
+        }
+        #carousel::-webkit-scrollbar { display: none; }
+
+        .ch-card {
+            flex: 0 0 auto; scroll-snap-align: start;
+            width: 200px; border-radius: 12px; overflow: hidden;
+            background: rgba(255,255,255,0.055);
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer; outline: none; position: relative;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .ch-card:hover, .ch-card:focus {
+            transform: translateY(-7px) scale(1.03);
+            border-color: rgba(255,255,255,0.32);
+            box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+        }
+        .ch-card.active { border-color: rgba(255,255,255,0.55); }
+        .ch-card.active::before {
+            content: '';
+            position: absolute; top: 8px; right: 8px; z-index: 5;
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 2px rgba(34,197,94,0.25);
+            animation: blink 1.4s ease infinite;
+        }
+
+        .ch-thumb {
+            width: 100%; aspect-ratio: 16/9; overflow: hidden;
+            background: rgba(255,255,255,0.025);
+        }
+        .ch-thumb img {
+            width: 100%; height: 100%; object-fit: contain; padding: 10px;
+            transition: transform 0.28s ease;
+        }
+        .ch-card:hover .ch-thumb img,
+        .ch-card:focus .ch-thumb img { transform: scale(1.07); }
+
+        .ch-body { padding: 0.65rem 0.8rem 0.75rem; }
+        .ch-name {
+            font-size: 0.82rem; font-weight: 600; color: #fff;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
+        }
+        .ch-meta {
+            font-size: 0.62rem; font-weight: 600; letter-spacing: 0.07em;
+            text-transform: uppercase; color: rgba(255,255,255,0.28);
+            display: flex; align-items: center; gap: 5px;
+        }
+        .ch-src-count {
+            background: rgba(255,255,255,0.1); border-radius: 4px;
+            padding: 1px 5px; color: rgba(255,255,255,0.45);
+        }
+
+        #toast {
+            position: fixed; bottom: 1.5rem; left: 50%; z-index: 200;
+            transform: translateX(-50%) translateY(8px);
+            background: rgba(25,25,25,0.92);
+            border: 1px solid rgba(255,255,255,0.13);
+            backdrop-filter: blur(14px);
+            color: rgba(255,255,255,0.85); font-size: 0.78rem; font-weight: 500;
+            padding: 0.45rem 1.1rem; border-radius: 999px; white-space: nowrap;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        #fs-hint {
+            position: fixed; top: 50%; left: 50%; z-index: 60;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.72); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 14px;
+            padding: 1.5rem 2rem; text-align: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #fs-hint.show { opacity: 1; }
+        #fs-hint h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+        #fs-hint p { font-size: 0.78rem; color: rgba(255,255,255,0.45); }
+        .fs-key {
+            display: inline-block; background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 5px;
+            padding: 1px 7px; font-family: monospace; font-size: 0.8rem; color: #fff;
+        }
+
+        @media (hover: hover) {
+            #carousel { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+            #carousel::-webkit-scrollbar { display: block; height: 3px; }
+            #carousel::-webkit-scrollbar-track { background: transparent; }
+            #carousel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+        }
+
+        /* ── IFRAME MODE ────────────────────────────── */
+        #iframe-player {
+            position: fixed; inset: 0; width: 100%; height: 100%;
+            z-index: 1; border: none; background: #000;
+            display: none;
+        }
+        #iframe-player.active { display: block; }
+
+        /* Badge MPD en cards */
+        .ch-badge-mpd {
+            font-size: 0.58rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; padding: 2px 6px;
+            border-radius: 4px; background: rgba(139,92,246,0.25);
+            color: rgba(167,139,250,0.9);
+            border: 1px solid rgba(139,92,246,0.3);
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline></video>
+<iframe id="iframe-player"
+    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+    allowfullscreen
+    scrolling="no"></iframe>
+
+<div id="loader">
+    <div class="spinner"></div>
+    <div id="loader-label">Conectando señal…</div>
+</div>
+
+<div id="error-state">
+    <div class="err-icon">⚠</div>
+    <div class="err-text">No se pudo cargar la señal</div>
+</div>
+
+<div id="osd">
+    <div class="osd-left">
+        <img id="osd-logo" src="" alt="">
+        <div>
+            <div class="live-badge"><div class="live-dot"></div>En vivo</div>
+            <div id="osd-title">—</div>
+            <div id="osd-source-label"></div>
+            <div id="source-switcher"></div>
+        </div>
+    </div>
+    <div class="osd-actions">
+        <button class="osd-btn" id="fs-btn" title="Pantalla completa (F)">
+            <svg id="fs-icon-enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+            <svg id="fs-icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+                <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<div id="ui">
+    <div class="ui-header">
+        <div>
+            <div class="ui-title">Guía de canales</div>
+            <div class="ui-hint">← → para navegar &nbsp;·&nbsp; Enter para sintonizar &nbsp;·&nbsp; F para pantalla completa</div>
+        </div>
+        <div class="brand">IPTV <em>—</em> Premium</div>
+    </div>
+    <div id="carousel"></div>
+</div>
+
+<div id="toast"></div>
+
+<div id="fs-hint">
+    <h3>Pantalla completa disponible</h3>
+    <p>Presioná <span class="fs-key">F</span> o el botón <span class="fs-key">⤢</span> arriba a la derecha</p>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  CANALES — Editá este array para agregar/quitar canales.
+//  Cada canal puede tener varias "urls" como respaldo.
+//  Si la primera URL falla, el player intenta la siguiente
+//  automáticamente (con toast informativo).
+// ══════════════════════════════════════════════════════
+const CHANNELS = [
+    {
+        name:   'Fox Sports',
+        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Fox-logo.webp',
+        group:  'Señal 1',
+        urls: [
+            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-91.playlist.m3u8',
+            // 'http://URL_RESPALDO_AMERICA',
+        ]
+    },
+     {
+        name:   'ESPN',
+        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN1-logo.webp',
+        group:  'Señal 1',
+        urls: [
+            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-94.playlist.m3u8',
+        ]
+    },
+    {
+        name:   'Telefe',
+        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Telefe-logo.webp',
+        group:  'Señal 1',
+        urls: [
+            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/telefe.playlist.m3u8',
+        ]
+    },
+    {
+        name:   'TyC Sports',
+        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TyCSports-logo.webp',
+        group:  'Señal 1',
+        urls: [
+            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-90.playlist.m3u8',
+        ]
+    },
+    {
+        name:   'Dsports',
+        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
+        group:  'Señal 1',
+        urls: [
+            'http://201.217.246.42:44310/Live/b71b7c09634cff4566afc4f70d132ec1/local-04_720.m3u8',
+        ]
+    },
+
+    // ── Canales MPD/DRM — se cargan en iframe ──────────
+    {
+        name:      'ESPN Premium',
+        poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPNPremium-logo.webp',
+        group:     'MPD',
+        iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=Rm94X1Nwb3J0c19QcmVtaXVuX0hE&start=true',
+    },
+    {
+        name:      'TNT Sports',
+        poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TNTSports-logo.webp',
+        group:     'MPD',
+        iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=VE5UX1Nwb3J0c19IRA&start=true',
+    },
+];
+
+// ── DOM ─────────────────────────────────────────────
+const video        = document.getElementById('video');
+const iframePlayer = document.getElementById('iframe-player');
+const loader       = document.getElementById('loader');
+const loaderLabel = document.getElementById('loader-label');
+const errorState  = document.getElementById('error-state');
+const osd         = document.getElementById('osd');
+const osdTitle    = document.getElementById('osd-title');
+const osdLogo     = document.getElementById('osd-logo');
+const osdSrcLbl   = document.getElementById('osd-source-label');
+const srcSwitcher = document.getElementById('source-switcher');
+const ui          = document.getElementById('ui');
+const carousel    = document.getElementById('carousel');
+const toast       = document.getElementById('toast');
+const fsBtn       = document.getElementById('fs-btn');
+const fsIconEnter = document.getElementById('fs-icon-enter');
+const fsIconExit  = document.getElementById('fs-icon-exit');
+const fsHint      = document.getElementById('fs-hint');
+
+let hlsInstance = null;
+let currentCh   = -1;
+let currentSrc  = 0;
+let uiTimer     = null;
+let osdTimer    = null;
+let toastTimer  = null;
+let loadTimer   = null;
+
+// ── LOADER ───────────────────────────────────────────
+function showLoader(label = 'Conectando señal…') {
+    loaderLabel.textContent = label;
+    loader.classList.add('visible');
+    errorState.classList.remove('visible');
+}
+function hideLoader() { loader.classList.remove('visible'); }
+function showError()  {
+    hideLoader();
+    errorState.classList.add('visible');
+    setTimeout(() => errorState.classList.remove('visible'), 3500);
+}
+
+// ── TOAST ────────────────────────────────────────────
+function showToast(msg) {
+    clearTimeout(toastTimer);
+    toast.textContent = msg;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+// ── OSD ──────────────────────────────────────────────
+function showOSD(ch, srcIdx) {
+    clearTimeout(osdTimer);
+    osdTitle.textContent  = ch.name;
+    osdLogo.src           = ch.poster || '';
+    osdLogo.style.display = ch.poster ? 'block' : 'none';
+    osdSrcLbl.textContent = (!ch.iframeUrl && ch.urls && ch.urls.length > 1) ? `Fuente ${srcIdx + 1} de ${ch.urls.length}` : '';
+
+    srcSwitcher.innerHTML = '';
+    if (!ch.iframeUrl && ch.urls && ch.urls.length > 1) {
+        ch.urls.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.className   = 'src-btn' + (i === srcIdx ? ' active' : '');
+            btn.textContent = `Fuente ${i + 1}`;
+            btn.addEventListener('click', e => { e.stopPropagation(); playSource(currentCh, i); });
+            srcSwitcher.appendChild(btn);
+        });
+    }
+
+    osd.classList.add('visible');
+    osdTimer = setTimeout(() => osd.classList.remove('visible'), 3000);
+}
+
+// ── UI ───────────────────────────────────────────────
+function showUI() {
+    clearTimeout(uiTimer);
+    ui.classList.add('visible');
+    
+    if (currentCh >= 0) {
+        clearTimeout(osdTimer);
+        osd.classList.add('visible');
+    }
+
+    uiTimer = setTimeout(() => {
+        ui.classList.remove('visible');
+        osd.classList.remove('visible');
+    }, 3000);
+}
+
+// ── FULLSCREEN ───────────────────────────────────────
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => showToast('El navegador bloqueó pantalla completa'));
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    const full = !!document.fullscreenElement;
+    fsIconEnter.style.display = full ? 'none' : '';
+    fsIconExit.style.display  = full ? '' : 'none';
+});
+
+fsBtn.addEventListener('click', () => {
+    toggleFullscreen();
+    if (currentCh >= 0) showOSD(CHANNELS[currentCh], currentSrc);
+});
+
+// ── MODO VIDEO vs IFRAME ─────────────────────────────
+function setVideoMode(mode) {
+    if (mode === 'iframe') {
+        video.pause();
+        video.removeAttribute('src');
+        video.style.display = 'none';
+        iframePlayer.classList.add('active');
+    } else {
+        iframePlayer.src = 'about:blank';
+        iframePlayer.classList.remove('active');
+        video.style.display = '';
+    }
+}
+
+// ── REPRODUCIR FUENTE HLS ────────────────────────────
+function playSource(chIdx, srcIdx) {
+    const ch  = CHANNELS[chIdx];
+    const url = ch.urls[srcIdx];
+    if (!url) return;
+
+    currentSrc = srcIdx;
+    setVideoMode('hls');
+    showLoader(srcIdx > 0 ? `Probando fuente ${srcIdx + 1} de ${ch.urls.length}…` : 'Conectando señal…');
+    showOSD(ch, srcIdx);
+
+    clearTimeout(loadTimer);
+    loadTimer = setTimeout(() => {
+        hideLoader();
+        tryNextSource(chIdx, srcIdx, 'Tiempo agotado');
+    }, 11000);
+
+    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+    video.removeAttribute('src');
+
+    if (Hls.isSupported()) {
+        hlsInstance = new Hls({ maxBufferLength: 8, liveSyncDuration: 3, maxMaxBufferLength: 30 });
+        hlsInstance.loadSource(url);
+        hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+        hlsInstance.on(Hls.Events.ERROR, (_, data) => {
+            if (!data.fatal) return;
+            clearTimeout(loadTimer);
+            tryNextSource(chIdx, srcIdx, 'Error de señal');
+        });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+        video.load();
+        video.play().catch(() => {});
+    } else {
+        clearTimeout(loadTimer);
+        hideLoader();
+        showToast('Tu navegador no soporta HLS');
+    }
+}
+
+// ── REPRODUCIR CANAL IFRAME (MPD/DRM) ────────────────
+function playIframe(chIdx) {
+    const ch = CHANNELS[chIdx];
+    if (!ch.iframeUrl) return;
+    currentSrc = 0;
+    setVideoMode('iframe');
+    showLoader('Cargando señal…');
+    showOSD(ch, 0);
+    // El iframe no emite eventos nativos — ocultamos el loader tras 5s
+    clearTimeout(loadTimer);
+    loadTimer = setTimeout(() => hideLoader(), 5000);
+    iframePlayer.src = ch.iframeUrl;
+}
+
+function tryNextSource(chIdx, srcIdx, reason) {
+    const ch = CHANNELS[chIdx];
+    if (srcIdx + 1 < ch.urls.length) {
+        showToast(`${reason} — probando fuente ${srcIdx + 2}…`);
+        playSource(chIdx, srcIdx + 1);
+    } else {
+        showError();
+        if (ch.urls.length > 1) showToast('Sin señal disponible en ninguna fuente');
+    }
+}
+
+// ── REPRODUCIR CANAL ─────────────────────────────────
+function playChannel(idx) {
+    const ch = CHANNELS[idx];
+    if (!ch) return;
+    document.querySelectorAll('.ch-card').forEach((el, i) => el.classList.toggle('active', i === idx));
+    currentCh = idx;
+    if (ch.iframeUrl) {
+        if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+        playIframe(idx);
+    } else {
+        setVideoMode('hls');
+        playSource(idx, 0);
+    }
+}
+
+// ── EVENTOS NATIVOS VIDEO ────────────────────────────
+video.addEventListener('playing', () => { clearTimeout(loadTimer); hideLoader(); });
+video.addEventListener('waiting', () => { if (currentCh >= 0) showLoader(); });
+video.addEventListener('error',   () => { clearTimeout(loadTimer); tryNextSource(currentCh, currentSrc, 'Error'); });
+
+// ── RENDER ───────────────────────────────────────────
+function renderCarousel() {
+    carousel.innerHTML = '';
+    CHANNELS.forEach((ch, i) => {
+        const card = document.createElement('div');
+        card.className = 'ch-card';
+        card.tabIndex  = i + 1;
+
+        let badge = '';
+        if (ch.iframeUrl) {
+            badge = `<span class="ch-badge-mpd">MPD</span>`;
+        } else if (ch.urls && ch.urls.length > 1) {
+            badge = `<span class="ch-src-count">${ch.urls.length} fuentes</span>`;
+        }
+
+        card.innerHTML = `
+            <div class="ch-thumb">
+                <img src="${ch.poster || ''}" alt="${ch.name}" onerror="this.style.display='none'">
+            </div>
+            <div class="ch-body">
+                <div class="ch-name">${ch.name}</div>
+                <div class="ch-meta">${ch.group}${badge}</div>
+            </div>`;
+
+        card.addEventListener('click',   ()  => { playChannel(i); showUI(); });
+        card.addEventListener('keydown', e   => { if (e.key === 'Enter') { playChannel(i); showUI(); } });
+        card.addEventListener('focus',   ()  => { showUI(); card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); });
+        carousel.appendChild(card);
+    });
+}
+
+// ── TECLADO ───────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); return; }
+    showUI();
+    if (!ui.classList.contains('visible')) return;
+
+    const cards = [...carousel.querySelectorAll('.ch-card')];
+    const idx   = cards.indexOf(document.activeElement);
+
+    if (e.key === 'ArrowRight') { e.preventDefault(); (cards[Math.min(idx + 1, cards.length - 1)] || cards[0]).focus(); }
+    else if (e.key === 'ArrowLeft')  { e.preventDefault(); cards[Math.max(idx - 1, 0)].focus(); }
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); cards[idx >= 0 ? idx : 0]?.focus(); }
+});
+
+document.addEventListener('mousemove',  showUI);
+document.addEventListener('touchstart', showUI, { passive: true });
+
+// ── HINT FULLSCREEN (solo desktop, solo primera vez) ──
+const isTouch = window.matchMedia('(hover: none)').matches;
+if (!isTouch && !sessionStorage.getItem('iptv_fsh')) {
+    sessionStorage.setItem('iptv_fsh', '1');
+    setTimeout(() => {
+        fsHint.classList.add('show');
+        setTimeout(() => fsHint.classList.remove('show'), 4000);
+    }, 2200);
+}
+
+// ── INIT ──────────────────────────────────────────────
+renderCarousel();
+setTimeout(() => {
+    if (CHANNELS.length > 0) {
+        playChannel(0);
+        showUI();
+        carousel.querySelector('.ch-card')?.focus();
+    }
+}, 300);
+</script>
+</body>
+</html>
