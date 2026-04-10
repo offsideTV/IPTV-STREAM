@@ -3,7 +3,10 @@ import fetch from "node-fetch";
 
 const app = express();
 
-// ── CORS — permite que cualquier origen consuma el proxy ──
+// 🔥 URL base dinámica (funciona en Render)
+const BASE_URL = process.env.RENDER_EXTERNAL_URL || "http://localhost:3000";
+
+// ── CORS ──
 app.use((req, res, next) => {
   res.set("Access-Control-Allow-Origin", "*");
   res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -12,6 +15,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// 🔥 Endpoint ping (para evitar sleep)
+app.get("/ping", (req, res) => {
+  res.send("pong");
+});
+
+// 🔥 Proxy
 app.get("/proxy", async (req, res) => {
   const url = req.query.url;
 
@@ -20,8 +29,7 @@ app.get("/proxy", async (req, res) => {
   try {
     const response = await fetch(url, {
       headers: {
-        // Algunos servidores IPTV exigen un User-Agent de navegador
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0",
         "Referer": url,
       }
     });
@@ -34,17 +42,15 @@ app.get("/proxy", async (req, res) => {
       const text = await response.text();
       const base = url.substring(0, url.lastIndexOf("/") + 1);
 
-      const modified = text.replace(/(.*\.ts|.*\.m3u8)/g, (match) => {
-        // Ignorar líneas que son comentarios o directivas (#EXT...)
-        if (match.startsWith("#")) return match;
+      const modified = text.replace(/^(?!#)(.*\.ts|.*\.m3u8)/gm, (match) => {
         let absolute = match.startsWith("http") ? match : base + match;
-        return `/proxy?url=${encodeURIComponent(absolute)}`;
+        return `${BASE_URL}/proxy?url=${encodeURIComponent(absolute)}`;
       });
 
       return res.send(modified);
     }
 
-    // 🔥 Segmentos de video (.ts)
+    // 🔥 Segmentos (.ts)
     const buffer = await response.arrayBuffer();
     res.send(Buffer.from(buffer));
 
@@ -54,4 +60,4 @@ app.get("/proxy", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("Proxy corriendo en http://localhost:3000"));
+app.listen(3000, () => console.log("Proxy corriendo 🚀"));
