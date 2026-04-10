@@ -15,35 +15,57 @@
             object-fit: cover; z-index: 1; background: #000;
         }
 
+        /* ── LOADER — compacto, centrado, no bloquea interacción ── */
         #loader {
-            position: fixed; inset: 0; z-index: 50;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.72); backdrop-filter: blur(10px);
+            align-items: center; justify-content: center; gap: 0.6rem;
+            background: rgba(0,0,0,0.78);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 1.4rem 2rem;
+            min-width: 160px;
             opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.25s ease;
         }
-        #loader.visible { opacity: 1; pointer-events: auto; }
+        #loader.visible { opacity: 1; }
         .spinner {
-            width: 44px; height: 44px; border-radius: 50%;
+            width: 36px; height: 36px; border-radius: 50%;
             border: 3px solid rgba(255,255,255,0.1); border-top-color: #fff;
             animation: spin 0.75s linear infinite;
         }
-        #loader-label { margin-top: 1rem; font-size: 0.8rem; color: rgba(255,255,255,0.45); letter-spacing: 0.05em; }
+        #loader-label {
+            font-size: 0.75rem; color: rgba(255,255,255,0.5);
+            letter-spacing: 0.04em; text-align: center;
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* ── ERROR — igual de compacto ── */
         #error-state {
-            position: fixed; inset: 0; z-index: 45;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 45;
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 0.6rem;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(10px);
+            align-items: center; justify-content: center; gap: 0.4rem;
+            background: rgba(0,0,0,0.78);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 1.2rem 1.8rem;
+            min-width: 160px;
             opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.25s ease;
         }
         #error-state.visible { opacity: 1; }
-        .err-icon { font-size: 2rem; opacity: 0.5; }
-        .err-text { font-size: 0.9rem; color: rgba(255,255,255,0.5); }
+        .err-icon { font-size: 1.6rem; opacity: 0.45; }
+        .err-text { font-size: 0.78rem; color: rgba(255,255,255,0.45); text-align: center; }
 
+        /* ── OSD ─────────────────────────────────────── */
         #osd {
             position: fixed; top: 0; left: 0; right: 0; z-index: 30;
             padding: 2rem 2.5rem 5rem;
@@ -105,6 +127,7 @@
         .osd-btn:active { transform: scale(0.93); }
         .osd-btn svg { width: 18px; height: 18px; }
 
+        /* ── UI INFERIOR ─────────────────────────────── */
         #ui {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
             padding: 6rem 2rem 1.75rem;
@@ -237,25 +260,61 @@
             border: 1px solid rgba(139,92,246,0.3);
             flex-shrink: 0;
         }
+
+        /* ── UNMUTE OVERLAY ─────────────────────────── */
+        #unmute-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #unmute-overlay.visible { opacity: 1; pointer-events: auto; }
+        #unmute-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 20px; padding: 2rem 2.8rem; cursor: pointer;
+            transition: background 0.15s ease, transform 0.1s ease;
+            color: #fff;
+        }
+        #unmute-btn:hover { background: rgba(255,255,255,0.18); }
+        #unmute-btn:active { transform: scale(0.96); }
+        #unmute-btn svg { width: 44px; height: 44px; opacity: 0.9; }
+        #unmute-btn span { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; opacity: 0.7; }
     </style>
 </head>
 <body>
 
-<video id="video" autoplay playsinline></video>
+<video id="video" autoplay playsinline muted></video>
+
+<!-- Unmute overlay — se muestra cuando autoplay arranca muteado -->
+<div id="unmute-overlay">
+    <button id="unmute-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <line x1="23" y1="9" x2="17" y2="15"/>
+            <line x1="17" y1="9" x2="23" y2="15"/>
+        </svg>
+        <span>Tocar para activar sonido</span>
+    </button>
+</div>
+
 <iframe id="iframe-player"
     allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
     sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
     allowfullscreen
     scrolling="no"></iframe>
 
+<!-- Loader compacto centrado — NO tapa el carrusel inferior -->
 <div id="loader">
     <div class="spinner"></div>
-    <div id="loader-label">Conectando señal…</div>
+    <div id="loader-label">Conectando…</div>
 </div>
 
+<!-- Error compacto centrado — NO tapa el carrusel inferior -->
 <div id="error-state">
     <div class="err-icon">⚠</div>
-    <div class="err-text">No se pudo cargar la señal</div>
+    <div class="err-text">Sin señal</div>
 </div>
 
 <div id="osd">
@@ -317,12 +376,20 @@ const CHANNELS = [
             // 'http://URL_RESPALDO_AMERICA',
         ]
     },
-     {
+    {
         name:   'ESPN',
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN1-logo.webp',
         group:  'Señal 1',
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-94.playlist.m3u8',
+        ]
+    },
+    {
+        name:   'ESPN 2',
+        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN1-logo.webp',
+        group:  'Señal 1',
+        urls: [
+            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-97.playlist.m3u8',
         ]
     },
     {
@@ -346,7 +413,23 @@ const CHANNELS = [
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
         group:  'Señal 1',
         urls: [
-            'http://201.217.246.42:44310/Live/b71b7c09634cff4566afc4f70d132ec1/local-04_720.m3u8',
+            'http://217.26.190.76:8888/play/a0co/index.m3u8',
+        ]
+    },
+    {
+        name:   'El trece',
+        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
+        group:  'Señal 1',
+        urls: [
+            'https://livetrx01.vodgc.net/eltrecetv/tracks-v1a1/mono.m3u8',
+        ]
+    },
+    {
+        name:   'Disney Channel',
+        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
+        group:  'Señal 1',
+        urls: [
+            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-32.playlist.m3u8',
         ]
     },
 
@@ -363,26 +446,40 @@ const CHANNELS = [
         group:     'MPD',
         iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=VE5UX1Nwb3J0c19IRA&start=true',
     },
+    {
+        name:      'Disney+ 1',
+        poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TNTSports-logo.webp',
+        group:     'MPD',
+        iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=RVNQTl9VWQ==&start=true',
+    },
+    {
+        name:      'Disney+ 2',
+        poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TNTSports-logo.webp',
+        group:     'MPD',
+        iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=RVNQTjJfVVk=&start=true',
+    },
 ];
 
 // ── DOM ─────────────────────────────────────────────
-const video        = document.getElementById('video');
-const iframePlayer = document.getElementById('iframe-player');
-const loader       = document.getElementById('loader');
-const loaderLabel = document.getElementById('loader-label');
-const errorState  = document.getElementById('error-state');
-const osd         = document.getElementById('osd');
-const osdTitle    = document.getElementById('osd-title');
-const osdLogo     = document.getElementById('osd-logo');
-const osdSrcLbl   = document.getElementById('osd-source-label');
-const srcSwitcher = document.getElementById('source-switcher');
-const ui          = document.getElementById('ui');
-const carousel    = document.getElementById('carousel');
-const toast       = document.getElementById('toast');
-const fsBtn       = document.getElementById('fs-btn');
-const fsIconEnter = document.getElementById('fs-icon-enter');
-const fsIconExit  = document.getElementById('fs-icon-exit');
-const fsHint      = document.getElementById('fs-hint');
+const video         = document.getElementById('video');
+const iframePlayer  = document.getElementById('iframe-player');
+const loader        = document.getElementById('loader');
+const loaderLabel   = document.getElementById('loader-label');
+const errorState    = document.getElementById('error-state');
+const osd           = document.getElementById('osd');
+const osdTitle      = document.getElementById('osd-title');
+const osdLogo       = document.getElementById('osd-logo');
+const osdSrcLbl     = document.getElementById('osd-source-label');
+const srcSwitcher   = document.getElementById('source-switcher');
+const ui            = document.getElementById('ui');
+const carousel      = document.getElementById('carousel');
+const toast         = document.getElementById('toast');
+const fsBtn         = document.getElementById('fs-btn');
+const fsIconEnter   = document.getElementById('fs-icon-enter');
+const fsIconExit    = document.getElementById('fs-icon-exit');
+const fsHint        = document.getElementById('fs-hint');
+const unmuteOverlay = document.getElementById('unmute-overlay');
+const unmuteBtn     = document.getElementById('unmute-btn');
 
 let hlsInstance = null;
 let currentCh   = -1;
@@ -391,15 +488,19 @@ let uiTimer     = null;
 let osdTimer    = null;
 let toastTimer  = null;
 let loadTimer   = null;
+let userUnmuted = false;
+
+// ── PROXY ────────────────────────────────────────────
+const PROXY = "/proxy?url=";
 
 // ── LOADER ───────────────────────────────────────────
-function showLoader(label = 'Conectando señal…') {
+function showLoader(label = 'Conectando…') {
     loaderLabel.textContent = label;
     loader.classList.add('visible');
     errorState.classList.remove('visible');
 }
 function hideLoader() { loader.classList.remove('visible'); }
-function showError()  {
+function showError() {
     hideLoader();
     errorState.classList.add('visible');
     setTimeout(() => errorState.classList.remove('visible'), 3500);
@@ -419,7 +520,8 @@ function showOSD(ch, srcIdx) {
     osdTitle.textContent  = ch.name;
     osdLogo.src           = ch.poster || '';
     osdLogo.style.display = ch.poster ? 'block' : 'none';
-    osdSrcLbl.textContent = (!ch.iframeUrl && ch.urls && ch.urls.length > 1) ? `Fuente ${srcIdx + 1} de ${ch.urls.length}` : '';
+    osdSrcLbl.textContent = (!ch.iframeUrl && ch.urls && ch.urls.length > 1)
+        ? `Fuente ${srcIdx + 1} de ${ch.urls.length}` : '';
 
     srcSwitcher.innerHTML = '';
     if (!ch.iframeUrl && ch.urls && ch.urls.length > 1) {
@@ -440,7 +542,7 @@ function showOSD(ch, srcIdx) {
 function showUI() {
     clearTimeout(uiTimer);
     ui.classList.add('visible');
-    
+
     if (currentCh >= 0) {
         clearTimeout(osdTimer);
         osd.classList.add('visible');
@@ -455,7 +557,8 @@ function showUI() {
 // ── FULLSCREEN ───────────────────────────────────────
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => showToast('El navegador bloqueó pantalla completa'));
+        document.documentElement.requestFullscreen()
+            .catch(() => showToast('El navegador bloqueó pantalla completa'));
     } else {
         document.exitFullscreen();
     }
@@ -486,15 +589,32 @@ function setVideoMode(mode) {
     }
 }
 
+// ── SALTAR AL LIVE EDGE ──────────────────────────────
+// Fuerza al video a posicionarse en el borde del live
+// para evitar que se quede reproduciendo contenido viejo.
+function jumpToLiveEdge() {
+    try {
+        if (video.seekable && video.seekable.length > 0) {
+            const edge = video.seekable.end(video.seekable.length - 1);
+            if (isFinite(edge) && edge > 0 && (edge - video.currentTime) > 3) {
+                video.currentTime = edge;
+            }
+        }
+    } catch (e) {
+        // seekable puede no estar listo aún, ignorar silenciosamente
+    }
+}
+
 // ── REPRODUCIR FUENTE HLS ────────────────────────────
 function playSource(chIdx, srcIdx) {
-    const ch  = CHANNELS[chIdx];
-    const url = ch.urls[srcIdx];
-    if (!url) return;
+    const ch = CHANNELS[chIdx];
+    const originalUrl = ch.urls[srcIdx];
+    if (!originalUrl) return;
+    const url = PROXY + encodeURIComponent(originalUrl);
 
     currentSrc = srcIdx;
     setVideoMode('hls');
-    showLoader(srcIdx > 0 ? `Probando fuente ${srcIdx + 1} de ${ch.urls.length}…` : 'Conectando señal…');
+    showLoader(srcIdx > 0 ? `Probando fuente ${srcIdx + 2}…` : 'Conectando…');
     showOSD(ch, srcIdx);
 
     clearTimeout(loadTimer);
@@ -507,19 +627,59 @@ function playSource(chIdx, srcIdx) {
     video.removeAttribute('src');
 
     if (Hls.isSupported()) {
-        hlsInstance = new Hls({ maxBufferLength: 8, liveSyncDuration: 3, maxMaxBufferLength: 30 });
+        hlsInstance = new Hls({
+            // ── Live edge agresivo — siempre en vivo ──────────
+            liveSyncDurationCount:       2,   // sincronizar a 2 segmentos del edge
+            liveMaxLatencyDurationCount: 4,   // máximo tolerado: 4 segmentos (~8s)
+            liveDurationInfinity:        true, // tratar la duración como infinita (live)
+            // ── Buffer mínimo para streams live ───────────────
+            maxBufferLength:             8,
+            maxMaxBufferLength:          16,
+            maxBufferSize:               20 * 1000 * 1000,
+            // ── Reintentos de red ──────────────────────────────
+            manifestLoadingMaxRetry:     4,
+            levelLoadingMaxRetry:        4,
+            fragLoadingMaxRetry:         6,
+            manifestLoadingRetryDelay:   1000,
+            levelLoadingRetryDelay:      1000,
+            fragLoadingRetryDelay:       500,
+            lowLatencyMode:              false,
+        });
+
         hlsInstance.loadSource(url);
         hlsInstance.attachMedia(video);
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+            // Saltar al borde del live inmediatamente al cargar
+            jumpToLiveEdge();
+            if (userUnmuted) video.muted = false;
+            video.play().catch(() => {});
+        });
+
+        // Cada vez que se carga un nuevo fragmento, verificar que
+        // seguimos en el live edge (por si el usuario pausó o hubo lag)
+        hlsInstance.on(Hls.Events.FRAG_LOADED, () => {
+            jumpToLiveEdge();
+        });
+
         hlsInstance.on(Hls.Events.ERROR, (_, data) => {
             if (!data.fatal) return;
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                hlsInstance.startLoad();
+                return;
+            }
             clearTimeout(loadTimer);
             tryNextSource(chIdx, srcIdx, 'Error de señal');
         });
+
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari nativo — usar seekable para saltar al live edge
         video.src = url;
         video.load();
-        video.play().catch(() => {});
+        video.addEventListener('loadedmetadata', () => {
+            jumpToLiveEdge();
+            video.play().catch(() => {});
+        }, { once: true });
     } else {
         clearTimeout(loadTimer);
         hideLoader();
@@ -535,7 +695,6 @@ function playIframe(chIdx) {
     setVideoMode('iframe');
     showLoader('Cargando señal…');
     showOSD(ch, 0);
-    // El iframe no emite eventos nativos — ocultamos el loader tras 5s
     clearTimeout(loadTimer);
     loadTimer = setTimeout(() => hideLoader(), 5000);
     iframePlayer.src = ch.iframeUrl;
@@ -568,9 +727,39 @@ function playChannel(idx) {
 }
 
 // ── EVENTOS NATIVOS VIDEO ────────────────────────────
-video.addEventListener('playing', () => { clearTimeout(loadTimer); hideLoader(); });
-video.addEventListener('waiting', () => { if (currentCh >= 0) showLoader(); });
-video.addEventListener('error',   () => { clearTimeout(loadTimer); tryNextSource(currentCh, currentSrc, 'Error'); });
+let waitingTimer = null;
+video.addEventListener('playing', () => {
+    clearTimeout(loadTimer);
+    clearTimeout(waitingTimer);
+    waitingTimer = null;
+    hideLoader();
+    if (!userUnmuted && video.muted) {
+        unmuteOverlay.classList.add('visible');
+    }
+});
+
+// Esperar 1.5s antes de mostrar spinner — ignora micro-cortes transitorios
+video.addEventListener('waiting', () => {
+    if (currentCh < 0) return;
+    if (waitingTimer) return;
+    waitingTimer = setTimeout(() => {
+        waitingTimer = null;
+        if (video.paused || video.readyState < 3) showLoader('Recuperando señal…');
+    }, 1500);
+});
+
+video.addEventListener('error', () => {
+    clearTimeout(loadTimer);
+    tryNextSource(currentCh, currentSrc, 'Error');
+});
+
+// ── UNMUTE ───────────────────────────────────────────
+unmuteBtn.addEventListener('click', () => {
+    video.muted   = false;
+    userUnmuted   = true;
+    unmuteOverlay.classList.remove('visible');
+    if (video.paused) video.play().catch(() => {});
+});
 
 // ── RENDER ───────────────────────────────────────────
 function renderCarousel() {
@@ -612,7 +801,7 @@ document.addEventListener('keydown', e => {
     const cards = [...carousel.querySelectorAll('.ch-card')];
     const idx   = cards.indexOf(document.activeElement);
 
-    if (e.key === 'ArrowRight') { e.preventDefault(); (cards[Math.min(idx + 1, cards.length - 1)] || cards[0]).focus(); }
+    if (e.key === 'ArrowRight')      { e.preventDefault(); (cards[Math.min(idx + 1, cards.length - 1)] || cards[0]).focus(); }
     else if (e.key === 'ArrowLeft')  { e.preventDefault(); cards[Math.max(idx - 1, 0)].focus(); }
     else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); cards[idx >= 0 ? idx : 0]?.focus(); }
 });
