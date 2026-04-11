@@ -18,8 +18,8 @@ const Cast = (() => {
     let _castModal      = null;
     let _showToastFn    = null;    // Referencia a showToast del main script
 
-    const APP_ID = chrome?.cast ? chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID
-                                : 'CC1AD845'; // Default Media Receiver
+    // APP_ID se usa dentro de _initCastApi cuando el SDK ya está cargado
+    const APP_ID = 'CC1AD845'; // Default Media Receiver (siempre válido)
 
     // ── Inicialización ────────────────────────────────────────────────────
     function init(showToastCallback) {
@@ -55,7 +55,7 @@ const Cast = (() => {
 
         const context = cast.framework.CastContext.getInstance();
         context.setOptions({
-            receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+            receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID || APP_ID,
             autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
         });
 
