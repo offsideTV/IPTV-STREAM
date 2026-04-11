@@ -806,10 +806,6 @@ setTimeout(() => {
     }
 }, 3000);
 
-// ── INIT ─────────────────────────────────────────────
-buildCarousel();
-Cast.init(showToast);
-
 // ── FLECHAS DEL CARRUSEL ──────────────────────────────
 const arrowLeft  = document.getElementById('arrow-left');
 const arrowRight = document.getElementById('arrow-right');
@@ -860,8 +856,8 @@ function scrollCarouselToIdx(idx) {
     updateCarouselPosition();
 }
 
-// Parchear updateCarouselActive para usar scrollCarouselToIdx
-const _origUpdateCarouselActive = updateCarouselActive;
+// Reemplazar updateCarouselActive para usar scrollCarouselToIdx
+// (se hace ANTES de buildCarousel y selectChannel para que ya esté lista)
 window._patchedUpdateCarouselActive = function(idx) {
     document.querySelectorAll('.ch-card').forEach((c, i) => {
         c.classList.toggle('active', i === idx);
@@ -869,9 +865,19 @@ window._patchedUpdateCarouselActive = function(idx) {
     scrollCarouselToIdx(idx);
 };
 
-// Inicializar posición
+// ── INIT ─────────────────────────────────────────────
+buildCarousel();
+Cast.init(showToast);
+
+// Inicializar posición del carrusel
 updateCarouselPosition(false);
-selectChannel(0); // Arranca con el primer canal
+
+// Arrancar con el primer canal — mostrar overlay de sonido siempre
+// ya que los navegadores bloquean audio sin interacción del usuario
+selectChannel(0);
+// Mostrar el overlay de unmute inmediatamente: el video empieza muted
+// y el usuario debe hacer click para activar el sonido (política de autoplay)
+unmuteOverlay.classList.add('visible');
 </script>
 </body>
 </html>
