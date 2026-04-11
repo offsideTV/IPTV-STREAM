@@ -590,10 +590,15 @@ function playSource(chIdx, srcIdx) {
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
             hideLoader();
-            video.play().catch(() => {
-                // Autoplay bloqueado — mostrar overlay de unmute
-                unmuteOverlay.classList.add('visible');
-            });
+            video.play()
+                .then(() => {
+                    // Autoplay OK pero muteado — mostrar overlay para activar sonido
+                    if (video.muted) unmuteOverlay.classList.add('visible');
+                })
+                .catch(() => {
+                    // Autoplay bloqueado por el browser
+                    unmuteOverlay.classList.add('visible');
+                });
         });
 
         hlsInstance.on(Hls.Events.ERROR, (_, data) => {
@@ -624,7 +629,9 @@ function playSource(chIdx, srcIdx) {
         video.src = url;
         video.addEventListener('loadedmetadata', () => { hideLoader(); }, { once: true });
         video.addEventListener('error', () => { showError(); }, { once: true });
-        video.play().catch(() => { unmuteOverlay.classList.add('visible'); });
+        video.play()
+            .then(() => { if (video.muted) unmuteOverlay.classList.add('visible'); })
+            .catch(() => { unmuteOverlay.classList.add('visible'); });
     } else {
         showError();
     }
