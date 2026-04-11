@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>IPTV — Premium</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="cast.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { height: 100%; overflow: hidden; background: #000; color: #fff; }
@@ -111,79 +112,98 @@
         /* ── UI INFERIOR ── */
         #ui {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-            padding: 6rem 2rem 1.75rem;
-            background: linear-gradient(to top, rgba(0,0,0,0.96) 35%, transparent 100%);
+            padding: 5rem 0 1.5rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.97) 40%, transparent 100%);
             opacity: 0; pointer-events: none;
             transition: opacity 0.4s ease;
         }
         #ui.visible { opacity: 1; pointer-events: auto; }
         .ui-header {
             display: flex; align-items: flex-end; justify-content: space-between;
-            margin-bottom: 1rem; padding: 0 0.2rem;
+            margin-bottom: 0.85rem; padding: 0 1.2rem;
         }
-        .ui-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
-        .ui-hint { font-size: 0.72rem; color: rgba(255,255,255,0.35); margin-top: 2px; }
-        .brand { font-size: 0.9rem; font-weight: 800; letter-spacing: -0.04em; color: rgba(255,255,255,0.85); }
-        .brand em { color: rgba(255,255,255,0.3); font-style: normal; }
+        .ui-title { font-size: 0.9rem; font-weight: 700; letter-spacing: -0.02em; }
+        .ui-hint { font-size: 0.68rem; color: rgba(255,255,255,0.3); margin-top: 2px; }
+        .brand { font-size: 0.85rem; font-weight: 800; letter-spacing: -0.04em; color: rgba(255,255,255,0.75); }
+        .brand em { color: rgba(255,255,255,0.25); font-style: normal; }
+
+        /* ── CAROUSEL CON FLECHAS ── */
+        .carousel-wrapper {
+            display: flex; align-items: center; gap: 0; position: relative;
+        }
+        .carousel-arrow {
+            flex-shrink: 0; width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px; cursor: pointer; color: #fff;
+            transition: background 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+            margin: 0 0.5rem; flex-shrink: 0;
+        }
+        .carousel-arrow:hover { background: rgba(255,255,255,0.18); }
+        .carousel-arrow:active { transform: scale(0.9); }
+        .carousel-arrow.disabled { opacity: 0.2; pointer-events: none; }
+        .carousel-arrow svg { width: 16px; height: 16px; }
 
         #carousel {
-            display: flex; gap: 0.9rem;
-            overflow-x: auto; scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            scroll-snap-type: x mandatory;
-            padding-bottom: 2px; scrollbar-width: none;
+            display: flex; gap: 0.65rem;
+            overflow: hidden;
+            flex: 1;
+            padding: 4px 0 6px;
         }
-        #carousel::-webkit-scrollbar { display: none; }
 
         .ch-card {
-            flex: 0 0 auto; scroll-snap-align: start;
-            width: 200px; border-radius: 12px; overflow: hidden;
-            background: rgba(255,255,255,0.055);
-            border: 1px solid rgba(255,255,255,0.08);
+            flex: 0 0 auto;
+            width: 136px; border-radius: 10px; overflow: hidden;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.07);
             cursor: pointer; outline: none; position: relative;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
         }
         .ch-card:hover, .ch-card:focus {
-            transform: translateY(-7px) scale(1.03);
-            border-color: rgba(255,255,255,0.32);
-            box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+            border-color: rgba(255,255,255,0.28);
+            background: rgba(255,255,255,0.09);
         }
-        .ch-card.active { border-color: rgba(255,255,255,0.55); }
+        .ch-card.active {
+            border-color: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.08);
+        }
         .ch-card.active::before {
-            content: ''; position: absolute; top: 8px; right: 8px; z-index: 5;
-            width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
+            content: ''; position: absolute; top: 6px; right: 6px; z-index: 5;
+            width: 6px; height: 6px; border-radius: 50%; background: #22c55e;
             box-shadow: 0 0 0 2px rgba(34,197,94,0.25);
             animation: blink 1.4s ease infinite;
         }
         .ch-thumb {
             width: 100%; aspect-ratio: 16/9; overflow: hidden;
-            background: rgba(255,255,255,0.025);
+            background: rgba(255,255,255,0.02);
+            display: flex; align-items: center; justify-content: center;
         }
         .ch-thumb img {
-            width: 100%; height: 100%; object-fit: contain; padding: 10px;
-            transition: transform 0.28s ease;
+            width: 80%; height: 80%; object-fit: contain;
+            opacity: 0.92; transition: opacity 0.2s ease;
         }
         .ch-card:hover .ch-thumb img,
-        .ch-card:focus .ch-thumb img { transform: scale(1.07); }
-        .ch-body { padding: 0.65rem 0.8rem 0.75rem; }
+        .ch-card:focus .ch-thumb img { opacity: 1; }
+        .ch-body { padding: 0.45rem 0.6rem 0.5rem; }
         .ch-name {
-            font-size: 0.82rem; font-weight: 600; color: #fff;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
+            font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.9);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;
         }
         .ch-meta {
-            font-size: 0.62rem; font-weight: 600; letter-spacing: 0.07em;
-            text-transform: uppercase; color: rgba(255,255,255,0.28);
-            display: flex; align-items: center; gap: 5px;
+            font-size: 0.56rem; font-weight: 600; letter-spacing: 0.07em;
+            text-transform: uppercase; color: rgba(255,255,255,0.25);
+            display: flex; align-items: center; gap: 4px;
         }
         .ch-src-count {
-            background: rgba(255,255,255,0.1); border-radius: 4px;
-            padding: 1px 5px; color: rgba(255,255,255,0.45);
+            background: rgba(255,255,255,0.08); border-radius: 3px;
+            padding: 1px 4px; color: rgba(255,255,255,0.38);
         }
         .ch-badge-mpd {
-            font-size: 0.58rem; font-weight: 700; letter-spacing: 0.08em;
-            text-transform: uppercase; padding: 2px 6px; border-radius: 4px;
-            background: rgba(139,92,246,0.25); color: rgba(167,139,250,0.9);
-            border: 1px solid rgba(139,92,246,0.3); flex-shrink: 0;
+            font-size: 0.52rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; padding: 1px 5px; border-radius: 3px;
+            background: rgba(139,92,246,0.2); color: rgba(167,139,250,0.85);
+            border: 1px solid rgba(139,92,246,0.28); flex-shrink: 0;
         }
 
         /* ── TOAST ── */
@@ -219,12 +239,9 @@
             padding: 1px 7px; font-family: monospace; font-size: 0.8rem; color: #fff;
         }
 
-        @media (hover: hover) {
-            #carousel { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
-            #carousel::-webkit-scrollbar { display: block; height: 3px; }
-            #carousel::-webkit-scrollbar-track { background: transparent; }
-            #carousel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
-        }
+        /* carousel sin scrollbar visible */
+        #carousel::-webkit-scrollbar { display: none; }
+        #carousel { scrollbar-width: none; }
 
         /* ── IFRAME MODE ── */
         #iframe-player {
@@ -314,9 +331,21 @@
             <div class="ui-title">Guía de canales</div>
             <div class="ui-hint">← → para navegar &nbsp;·&nbsp; Enter para sintonizar &nbsp;·&nbsp; F para pantalla completa</div>
         </div>
-        <div class="brand">IPTV <em>—</em> Premium</div>
+        <div class="brand"></div>
     </div>
-    <div id="carousel"></div>
+    <div class="carousel-wrapper">
+        <button class="carousel-arrow" id="arrow-left" title="Anterior">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+        </button>
+        <div id="carousel"></div>
+        <button class="carousel-arrow" id="arrow-right" title="Siguiente">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+        </button>
+    </div>
 </div>
 
 <div id="toast"></div>
@@ -347,7 +376,7 @@ const CHANNELS = [
     },
     {
         name:   'ESPN 2',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN1-logo.webp',
+        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN2-logo.webp',
         group:  'Señal 1',
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-97.playlist.m3u8',
@@ -379,7 +408,7 @@ const CHANNELS = [
     },
     {
         name:   'El Trece',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
+        poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891912/ml2lcrholt2upgw3iasl.webp',
         group:  'Señal 1',
         urls: [
             'https://livetrx01.vodgc.net/eltrecetv/tracks-v1a1/mono.m3u8',
@@ -387,7 +416,7 @@ const CHANNELS = [
     },
     {
         name:   'Disney Channel',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
+        poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891943/pzmczdnn9zq9uc7our7c.webp',
         group:  'Señal 1',
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-32.playlist.m3u8',
@@ -408,13 +437,13 @@ const CHANNELS = [
     },
     {
         name:      'Disney+ 1',
-        poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TNTSports-logo.webp',
+        poster:    'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891925/yomgjkrbwilo2uah6mlz.webp',
         group:     'MPD',
         iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=RVNQTl9VWQ==&start=true',
     },
     {
         name:      'Disney+ 2',
-        poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TNTSports-logo.webp',
+        poster:    'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891925/yomgjkrbwilo2uah6mlz.webp',
         group:     'MPD',
         iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=RVNQTjJfVVk=&start=true',
     },
@@ -516,7 +545,12 @@ function updateCarouselActive(idx) {
     document.querySelectorAll('.ch-card').forEach((c, i) => {
         c.classList.toggle('active', i === idx);
     });
-    // Scroll suave a la card activa
+    // Si ya fue parcheado por el init, usar la versión con flechas
+    if (window._patchedUpdateCarouselActive) {
+        window._patchedUpdateCarouselActive(idx);
+        return;
+    }
+    // fallback: scroll suave a la card activa
     const activeCard = carousel.children[idx];
     if (activeCard) {
         activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
@@ -544,6 +578,7 @@ function updateOSD(chIdx, srcIdx) {
                     currentSrcIdx = i;
                     playSource(chIdx, i);
                     updateOSD(chIdx, i);
+                    Cast.updateSource(PROXY + encodeURIComponent(ch.urls[i]));
                 });
                 srcSwitcher.appendChild(btn);
             });
@@ -590,15 +625,10 @@ function playSource(chIdx, srcIdx) {
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
             hideLoader();
-            video.play()
-                .then(() => {
-                    // Autoplay OK pero muteado — mostrar overlay para activar sonido
-                    if (video.muted) unmuteOverlay.classList.add('visible');
-                })
-                .catch(() => {
-                    // Autoplay bloqueado por el browser
-                    unmuteOverlay.classList.add('visible');
-                });
+            video.play().catch(() => {
+                // Autoplay bloqueado — mostrar overlay de unmute
+                unmuteOverlay.classList.add('visible');
+            });
         });
 
         hlsInstance.on(Hls.Events.ERROR, (_, data) => {
@@ -629,9 +659,7 @@ function playSource(chIdx, srcIdx) {
         video.src = url;
         video.addEventListener('loadedmetadata', () => { hideLoader(); }, { once: true });
         video.addEventListener('error', () => { showError(); }, { once: true });
-        video.play()
-            .then(() => { if (video.muted) unmuteOverlay.classList.add('visible'); })
-            .catch(() => { unmuteOverlay.classList.add('visible'); });
+        video.play().catch(() => { unmuteOverlay.classList.add('visible'); });
     } else {
         showError();
     }
@@ -663,10 +691,14 @@ function selectChannel(idx) {
         hideLoader();
         iframePlayer.src = ch.iframeUrl;
         iframePlayer.classList.add('active');
+        // Notificar al módulo Cast: DRM, no transmitible
+        Cast.updateChannel(null, ch.name, ch.poster, true);
     } else {
         // Canal HLS
         video.muted = true; // garantizar autoplay
         playSource(idx, 0);
+        // Notificar al módulo Cast con la primera fuente
+        Cast.updateChannel(PROXY + encodeURIComponent(ch.urls[0]), ch.name, ch.poster, false);
     }
 }
 
@@ -776,6 +808,69 @@ setTimeout(() => {
 
 // ── INIT ─────────────────────────────────────────────
 buildCarousel();
+Cast.init(showToast);
+
+// ── FLECHAS DEL CARRUSEL ──────────────────────────────
+const arrowLeft  = document.getElementById('arrow-left');
+const arrowRight = document.getElementById('arrow-right');
+
+// Cuántas cards son visibles según el ancho del carousel
+function visibleCount() {
+    const cardW = 136 + 10; // width + gap
+    return Math.max(1, Math.floor(carousel.offsetWidth / cardW));
+}
+
+let carouselOffset = 0; // índice del primer canal visible
+
+function updateCarouselPosition(smooth = true) {
+    const cardW = 136 + 10;
+    const target = carouselOffset * cardW;
+    if (smooth) {
+        carousel.style.transition = 'transform 0.35s cubic-bezier(0.4,0,0.2,1)';
+    } else {
+        carousel.style.transition = 'none';
+    }
+    carousel.style.transform = `translateX(-${target}px)`;
+
+    // estado flechas
+    arrowLeft.classList.toggle('disabled', carouselOffset <= 0);
+    arrowRight.classList.toggle('disabled', carouselOffset + visibleCount() >= CHANNELS.length);
+}
+
+arrowLeft.addEventListener('click', () => {
+    carouselOffset = Math.max(0, carouselOffset - visibleCount());
+    updateCarouselPosition();
+    showOSD();
+});
+arrowRight.addEventListener('click', () => {
+    const max = Math.max(0, CHANNELS.length - visibleCount());
+    carouselOffset = Math.min(max, carouselOffset + visibleCount());
+    updateCarouselPosition();
+    showOSD();
+});
+
+// Asegurarse que la card activa sea visible al seleccionar
+function scrollCarouselToIdx(idx) {
+    const vc = visibleCount();
+    if (idx < carouselOffset) {
+        carouselOffset = idx;
+    } else if (idx >= carouselOffset + vc) {
+        carouselOffset = idx - vc + 1;
+    }
+    updateCarouselPosition();
+}
+
+// Parchear updateCarouselActive para usar scrollCarouselToIdx
+const _origUpdateCarouselActive = updateCarouselActive;
+window._patchedUpdateCarouselActive = function(idx) {
+    document.querySelectorAll('.ch-card').forEach((c, i) => {
+        c.classList.toggle('active', i === idx);
+    });
+    scrollCarouselToIdx(idx);
+};
+
+// Inicializar posición
+updateCarouselPosition(false);
 selectChannel(0); // Arranca con el primer canal
 </script>
 </body>
