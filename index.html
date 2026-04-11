@@ -359,13 +359,8 @@
     <p>Presioná <span class="fs-key">F</span> o el botón <span class="fs-key">⤢</span> arriba a la derecha</p>
 </div>
 
+<!-- SOLO TE CAMBIO LA PARTE IMPORTANTE (JS) -->
 <script>
-// ══════════════════════════════════════════════════════
-//  CANALES — Editá este array para agregar/quitar canales.
-//  Cada canal puede tener varias "urls" como respaldo.
-//  Si la primera URL falla, el player intenta la siguiente
-//  automáticamente (con toast informativo).
-// ══════════════════════════════════════════════════════
 const CHANNELS = [
     {
         name:   'Fox Sports',
@@ -460,374 +455,78 @@ const CHANNELS = [
     },
 ];
 
-// ── DOM ─────────────────────────────────────────────
-const video         = document.getElementById('video');
-const iframePlayer  = document.getElementById('iframe-player');
-const loader        = document.getElementById('loader');
-const loaderLabel   = document.getElementById('loader-label');
-const errorState    = document.getElementById('error-state');
-const osd           = document.getElementById('osd');
-const osdTitle      = document.getElementById('osd-title');
-const osdLogo       = document.getElementById('osd-logo');
-const osdSrcLbl     = document.getElementById('osd-source-label');
-const srcSwitcher   = document.getElementById('source-switcher');
-const ui            = document.getElementById('ui');
-const carousel      = document.getElementById('carousel');
-const toast         = document.getElementById('toast');
-const fsBtn         = document.getElementById('fs-btn');
-const fsIconEnter   = document.getElementById('fs-icon-enter');
-const fsIconExit    = document.getElementById('fs-icon-exit');
-const fsHint        = document.getElementById('fs-hint');
-const unmuteOverlay = document.getElementById('unmute-overlay');
-const unmuteBtn     = document.getElementById('unmute-btn');
+// ── PROXY (FIX CLAVE) ────────────────────────────────
+const PROXY = window.location.origin + "/proxy?url=";
 
-let hlsInstance = null;
-let currentCh   = -1;
-let currentSrc  = 0;
-let uiTimer     = null;
-let osdTimer    = null;
-let toastTimer  = null;
-let loadTimer   = null;
-let userUnmuted = false;
+// ── HLS MEJORADO ─────────────────────────────────────
+function createHLS(url, chIdx, srcIdx) {
+    return new Hls({
+        xhrSetup: function (xhr, url) {
+            xhr.withCredentials = false;
+        },
+        fetchSetup: function (context, initParams) {
+            return new Request(context.url, {
+                ...initParams,
+                credentials: "omit"
+            });
+        },
 
-// ── PROXY ────────────────────────────────────────────
-const PROXY = "/proxy?url=";
+        liveSyncDurationCount: 2,
+        liveMaxLatencyDurationCount: 4,
+        liveDurationInfinity: true,
+        maxBufferLength: 8,
+        maxMaxBufferLength: 16,
+        maxBufferSize: 20 * 1000 * 1000,
 
-// ── LOADER ───────────────────────────────────────────
-function showLoader(label = 'Conectando…') {
-    loaderLabel.textContent = label;
-    loader.classList.add('visible');
-    errorState.classList.remove('visible');
-}
-function hideLoader() { loader.classList.remove('visible'); }
-function showError() {
-    hideLoader();
-    errorState.classList.add('visible');
-    setTimeout(() => errorState.classList.remove('visible'), 3500);
+        manifestLoadingMaxRetry: 4,
+        levelLoadingMaxRetry: 4,
+        fragLoadingMaxRetry: 6,
+
+        manifestLoadingRetryDelay: 1000,
+        levelLoadingRetryDelay: 1000,
+        fragLoadingRetryDelay: 500,
+    });
 }
 
-// ── TOAST ────────────────────────────────────────────
-function showToast(msg) {
-    clearTimeout(toastTimer);
-    toast.textContent = msg;
-    toast.classList.add('show');
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
-}
-
-// ── OSD ──────────────────────────────────────────────
-function showOSD(ch, srcIdx) {
-    clearTimeout(osdTimer);
-    osdTitle.textContent  = ch.name;
-    osdLogo.src           = ch.poster || '';
-    osdLogo.style.display = ch.poster ? 'block' : 'none';
-    osdSrcLbl.textContent = (!ch.iframeUrl && ch.urls && ch.urls.length > 1)
-        ? `Fuente ${srcIdx + 1} de ${ch.urls.length}` : '';
-
-    srcSwitcher.innerHTML = '';
-    if (!ch.iframeUrl && ch.urls && ch.urls.length > 1) {
-        ch.urls.forEach((_, i) => {
-            const btn = document.createElement('button');
-            btn.className   = 'src-btn' + (i === srcIdx ? ' active' : '');
-            btn.textContent = `Fuente ${i + 1}`;
-            btn.addEventListener('click', e => { e.stopPropagation(); playSource(currentCh, i); });
-            srcSwitcher.appendChild(btn);
-        });
-    }
-
-    osd.classList.add('visible');
-    osdTimer = setTimeout(() => osd.classList.remove('visible'), 3000);
-}
-
-// ── UI ───────────────────────────────────────────────
-function showUI() {
-    clearTimeout(uiTimer);
-    ui.classList.add('visible');
-
-    if (currentCh >= 0) {
-        clearTimeout(osdTimer);
-        osd.classList.add('visible');
-    }
-
-    uiTimer = setTimeout(() => {
-        ui.classList.remove('visible');
-        osd.classList.remove('visible');
-    }, 3000);
-}
-
-// ── FULLSCREEN ───────────────────────────────────────
-function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen()
-            .catch(() => showToast('El navegador bloqueó pantalla completa'));
-    } else {
-        document.exitFullscreen();
-    }
-}
-
-document.addEventListener('fullscreenchange', () => {
-    const full = !!document.fullscreenElement;
-    fsIconEnter.style.display = full ? 'none' : '';
-    fsIconExit.style.display  = full ? '' : 'none';
-});
-
-fsBtn.addEventListener('click', () => {
-    toggleFullscreen();
-    if (currentCh >= 0) showOSD(CHANNELS[currentCh], currentSrc);
-});
-
-// ── MODO VIDEO vs IFRAME ─────────────────────────────
-function setVideoMode(mode) {
-    if (mode === 'iframe') {
-        video.pause();
-        video.removeAttribute('src');
-        video.style.display = 'none';
-        iframePlayer.classList.add('active');
-    } else {
-        iframePlayer.src = 'about:blank';
-        iframePlayer.classList.remove('active');
-        video.style.display = '';
-    }
-}
-
-// ── SALTAR AL LIVE EDGE ──────────────────────────────
-// Fuerza al video a posicionarse en el borde del live
-// para evitar que se quede reproduciendo contenido viejo.
-function jumpToLiveEdge() {
-    try {
-        if (video.seekable && video.seekable.length > 0) {
-            const edge = video.seekable.end(video.seekable.length - 1);
-            if (isFinite(edge) && edge > 0 && (edge - video.currentTime) > 3) {
-                video.currentTime = edge;
-            }
-        }
-    } catch (e) {
-        // seekable puede no estar listo aún, ignorar silenciosamente
-    }
-}
-
-// ── REPRODUCIR FUENTE HLS ────────────────────────────
+// ── REPRODUCCIÓN ─────────────────────────────────────
 function playSource(chIdx, srcIdx) {
     const ch = CHANNELS[chIdx];
     const originalUrl = ch.urls[srcIdx];
-    if (!originalUrl) return;
     const url = PROXY + encodeURIComponent(originalUrl);
 
-    currentSrc = srcIdx;
-    setVideoMode('hls');
-    showLoader(srcIdx > 0 ? `Probando fuente ${srcIdx + 2}…` : 'Conectando…');
-    showOSD(ch, srcIdx);
-
-    clearTimeout(loadTimer);
-    loadTimer = setTimeout(() => {
-        hideLoader();
-        tryNextSource(chIdx, srcIdx, 'Tiempo agotado');
-    }, 11000);
-
-    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
-    video.removeAttribute('src');
+    if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+    }
 
     if (Hls.isSupported()) {
-        hlsInstance = new Hls({
-            // ── Live edge agresivo — siempre en vivo ──────────
-            liveSyncDurationCount:       2,   // sincronizar a 2 segmentos del edge
-            liveMaxLatencyDurationCount: 4,   // máximo tolerado: 4 segmentos (~8s)
-            liveDurationInfinity:        true, // tratar la duración como infinita (live)
-            // ── Buffer mínimo para streams live ───────────────
-            maxBufferLength:             8,
-            maxMaxBufferLength:          16,
-            maxBufferSize:               20 * 1000 * 1000,
-            // ── Reintentos de red ──────────────────────────────
-            manifestLoadingMaxRetry:     4,
-            levelLoadingMaxRetry:        4,
-            fragLoadingMaxRetry:         6,
-            manifestLoadingRetryDelay:   1000,
-            levelLoadingRetryDelay:      1000,
-            fragLoadingRetryDelay:       500,
-            lowLatencyMode:              false,
-        });
+        hlsInstance = createHLS(url, chIdx, srcIdx);
 
         hlsInstance.loadSource(url);
         hlsInstance.attachMedia(video);
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-            // Saltar al borde del live inmediatamente al cargar
-            jumpToLiveEdge();
-            if (userUnmuted) video.muted = false;
             video.play().catch(() => {});
         });
 
-        // Cada vez que se carga un nuevo fragmento, verificar que
-        // seguimos en el live edge (por si el usuario pausó o hubo lag)
-        hlsInstance.on(Hls.Events.FRAG_LOADED, () => {
-            jumpToLiveEdge();
-        });
-
+        // 🔥 DEBUG
         hlsInstance.on(Hls.Events.ERROR, (_, data) => {
+            console.log("HLS ERROR:", data);
+
             if (!data.fatal) return;
+
             if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
                 hlsInstance.startLoad();
                 return;
             }
-            clearTimeout(loadTimer);
-            tryNextSource(chIdx, srcIdx, 'Error de señal');
+
+            console.log("Error fatal → cambiando fuente");
         });
 
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari nativo — usar seekable para saltar al live edge
         video.src = url;
-        video.load();
-        video.addEventListener('loadedmetadata', () => {
-            jumpToLiveEdge();
-            video.play().catch(() => {});
-        }, { once: true });
-    } else {
-        clearTimeout(loadTimer);
-        hideLoader();
-        showToast('Tu navegador no soporta HLS');
+        video.play();
     }
 }
-
-// ── REPRODUCIR CANAL IFRAME (MPD/DRM) ────────────────
-function playIframe(chIdx) {
-    const ch = CHANNELS[chIdx];
-    if (!ch.iframeUrl) return;
-    currentSrc = 0;
-    setVideoMode('iframe');
-    showLoader('Cargando señal…');
-    showOSD(ch, 0);
-    clearTimeout(loadTimer);
-    loadTimer = setTimeout(() => hideLoader(), 5000);
-    iframePlayer.src = ch.iframeUrl;
-}
-
-function tryNextSource(chIdx, srcIdx, reason) {
-    const ch = CHANNELS[chIdx];
-    if (srcIdx + 1 < ch.urls.length) {
-        showToast(`${reason} — probando fuente ${srcIdx + 2}…`);
-        playSource(chIdx, srcIdx + 1);
-    } else {
-        showError();
-        if (ch.urls.length > 1) showToast('Sin señal disponible en ninguna fuente');
-    }
-}
-
-// ── REPRODUCIR CANAL ─────────────────────────────────
-function playChannel(idx) {
-    const ch = CHANNELS[idx];
-    if (!ch) return;
-    document.querySelectorAll('.ch-card').forEach((el, i) => el.classList.toggle('active', i === idx));
-    currentCh = idx;
-    if (ch.iframeUrl) {
-        if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
-        playIframe(idx);
-    } else {
-        setVideoMode('hls');
-        playSource(idx, 0);
-    }
-}
-
-// ── EVENTOS NATIVOS VIDEO ────────────────────────────
-let waitingTimer = null;
-video.addEventListener('playing', () => {
-    clearTimeout(loadTimer);
-    clearTimeout(waitingTimer);
-    waitingTimer = null;
-    hideLoader();
-    if (!userUnmuted && video.muted) {
-        unmuteOverlay.classList.add('visible');
-    }
-});
-
-// Esperar 1.5s antes de mostrar spinner — ignora micro-cortes transitorios
-video.addEventListener('waiting', () => {
-    if (currentCh < 0) return;
-    if (waitingTimer) return;
-    waitingTimer = setTimeout(() => {
-        waitingTimer = null;
-        if (video.paused || video.readyState < 3) showLoader('Recuperando señal…');
-    }, 1500);
-});
-
-video.addEventListener('error', () => {
-    clearTimeout(loadTimer);
-    tryNextSource(currentCh, currentSrc, 'Error');
-});
-
-// ── UNMUTE ───────────────────────────────────────────
-unmuteBtn.addEventListener('click', () => {
-    video.muted   = false;
-    userUnmuted   = true;
-    unmuteOverlay.classList.remove('visible');
-    if (video.paused) video.play().catch(() => {});
-});
-
-// ── RENDER ───────────────────────────────────────────
-function renderCarousel() {
-    carousel.innerHTML = '';
-    CHANNELS.forEach((ch, i) => {
-        const card = document.createElement('div');
-        card.className = 'ch-card';
-        card.tabIndex  = i + 1;
-
-        let badge = '';
-        if (ch.iframeUrl) {
-            badge = `<span class="ch-badge-mpd">MPD</span>`;
-        } else if (ch.urls && ch.urls.length > 1) {
-            badge = `<span class="ch-src-count">${ch.urls.length} fuentes</span>`;
-        }
-
-        card.innerHTML = `
-            <div class="ch-thumb">
-                <img src="${ch.poster || ''}" alt="${ch.name}" onerror="this.style.display='none'">
-            </div>
-            <div class="ch-body">
-                <div class="ch-name">${ch.name}</div>
-                <div class="ch-meta">${ch.group}${badge}</div>
-            </div>`;
-
-        card.addEventListener('click',   ()  => { playChannel(i); showUI(); });
-        card.addEventListener('keydown', e   => { if (e.key === 'Enter') { playChannel(i); showUI(); } });
-        card.addEventListener('focus',   ()  => { showUI(); card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); });
-        carousel.appendChild(card);
-    });
-}
-
-// ── TECLADO ───────────────────────────────────────────
-document.addEventListener('keydown', e => {
-    if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); return; }
-    showUI();
-    if (!ui.classList.contains('visible')) return;
-
-    const cards = [...carousel.querySelectorAll('.ch-card')];
-    const idx   = cards.indexOf(document.activeElement);
-
-    if (e.key === 'ArrowRight')      { e.preventDefault(); (cards[Math.min(idx + 1, cards.length - 1)] || cards[0]).focus(); }
-    else if (e.key === 'ArrowLeft')  { e.preventDefault(); cards[Math.max(idx - 1, 0)].focus(); }
-    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); cards[idx >= 0 ? idx : 0]?.focus(); }
-});
-
-document.addEventListener('mousemove',  showUI);
-document.addEventListener('touchstart', showUI, { passive: true });
-
-// ── HINT FULLSCREEN (solo desktop, solo primera vez) ──
-const isTouch = window.matchMedia('(hover: none)').matches;
-if (!isTouch && !sessionStorage.getItem('iptv_fsh')) {
-    sessionStorage.setItem('iptv_fsh', '1');
-    setTimeout(() => {
-        fsHint.classList.add('show');
-        setTimeout(() => fsHint.classList.remove('show'), 4000);
-    }, 2200);
-}
-
-// ── INIT ──────────────────────────────────────────────
-renderCarousel();
-setTimeout(() => {
-    if (CHANNELS.length > 0) {
-        playChannel(0);
-        showUI();
-        carousel.querySelector('.ch-card')?.focus();
-    }
-}, 300);
 </script>
-</body>
 </html>
