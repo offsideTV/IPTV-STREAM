@@ -15,20 +15,16 @@
             object-fit: cover; z-index: 1; background: #000;
         }
 
-        /* ── LOADER — compacto, centrado, no bloquea interacción ── */
+        /* ── LOADER ── */
         #loader {
-            position: fixed;
-            top: 50%; left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             z-index: 50;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 0.6rem;
-            background: rgba(0,0,0,0.78);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 1.4rem 2rem;
-            min-width: 160px;
+            background: rgba(0,0,0,0.78); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+            padding: 1.4rem 2rem; min-width: 160px;
             opacity: 0; pointer-events: none;
             transition: opacity 0.25s ease;
         }
@@ -38,26 +34,19 @@
             border: 3px solid rgba(255,255,255,0.1); border-top-color: #fff;
             animation: spin 0.75s linear infinite;
         }
-        #loader-label {
-            font-size: 0.75rem; color: rgba(255,255,255,0.5);
-            letter-spacing: 0.04em; text-align: center;
-        }
+        #loader-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); letter-spacing: 0.04em; text-align: center; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── ERROR — igual de compacto ── */
+        /* ── ERROR ── */
         #error-state {
-            position: fixed;
-            top: 50%; left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             z-index: 45;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 0.4rem;
-            background: rgba(0,0,0,0.78);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 1.2rem 1.8rem;
-            min-width: 160px;
+            background: rgba(0,0,0,0.78); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+            padding: 1.2rem 1.8rem; min-width: 160px;
             opacity: 0; pointer-events: none;
             transition: opacity 0.25s ease;
         }
@@ -65,7 +54,7 @@
         .err-icon { font-size: 1.6rem; opacity: 0.45; }
         .err-text { font-size: 0.78rem; color: rgba(255,255,255,0.45); text-align: center; }
 
-        /* ── OSD ─────────────────────────────────────── */
+        /* ── OSD ── */
         #osd {
             position: fixed; top: 0; left: 0; right: 0; z-index: 30;
             padding: 2rem 2.5rem 5rem;
@@ -75,9 +64,7 @@
             transition: opacity 0.4s ease;
         }
         #osd.visible { opacity: 1; pointer-events: auto; }
-
         .osd-left { display: flex; align-items: flex-start; gap: 1.25rem; }
-
         #osd-logo {
             width: 64px; height: 64px; border-radius: 14px;
             object-fit: contain; background: rgba(255,255,255,0.08);
@@ -94,16 +81,11 @@
             animation: blink 1.4s ease infinite;
         }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
-
         #osd-title {
             font-size: clamp(1.8rem, 4.5vw, 3.2rem);
             font-weight: 800; line-height: 1; letter-spacing: -0.03em;
         }
-        #osd-source-label {
-            font-size: 0.75rem; color: rgba(255,255,255,0.35);
-            margin-top: 6px; font-weight: 500;
-        }
-
+        #osd-source-label { font-size: 0.75rem; color: rgba(255,255,255,0.35); margin-top: 6px; font-weight: 500; }
         #source-switcher { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
         .src-btn {
             font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
@@ -114,7 +96,6 @@
         }
         .src-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
         .src-btn.active { background: rgba(255,255,255,0.22); color: #fff; border-color: rgba(255,255,255,0.45); }
-
         .osd-actions { display: flex; align-items: flex-start; gap: 0.5rem; padding-top: 4px; }
         .osd-btn {
             display: flex; align-items: center; justify-content: center;
@@ -127,7 +108,7 @@
         .osd-btn:active { transform: scale(0.93); }
         .osd-btn svg { width: 18px; height: 18px; }
 
-        /* ── UI INFERIOR ─────────────────────────────── */
+        /* ── UI INFERIOR ── */
         #ui {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
             padding: 6rem 2rem 1.75rem;
@@ -136,7 +117,6 @@
             transition: opacity 0.4s ease;
         }
         #ui.visible { opacity: 1; pointer-events: auto; }
-
         .ui-header {
             display: flex; align-items: flex-end; justify-content: space-between;
             margin-bottom: 1rem; padding: 0 0.2rem;
@@ -151,8 +131,7 @@
             overflow-x: auto; scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
             scroll-snap-type: x mandatory;
-            padding-bottom: 2px;
-            scrollbar-width: none;
+            padding-bottom: 2px; scrollbar-width: none;
         }
         #carousel::-webkit-scrollbar { display: none; }
 
@@ -171,14 +150,11 @@
         }
         .ch-card.active { border-color: rgba(255,255,255,0.55); }
         .ch-card.active::before {
-            content: '';
-            position: absolute; top: 8px; right: 8px; z-index: 5;
-            width: 7px; height: 7px; border-radius: 50%;
-            background: #22c55e;
+            content: ''; position: absolute; top: 8px; right: 8px; z-index: 5;
+            width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
             box-shadow: 0 0 0 2px rgba(34,197,94,0.25);
             animation: blink 1.4s ease infinite;
         }
-
         .ch-thumb {
             width: 100%; aspect-ratio: 16/9; overflow: hidden;
             background: rgba(255,255,255,0.025);
@@ -189,7 +165,6 @@
         }
         .ch-card:hover .ch-thumb img,
         .ch-card:focus .ch-thumb img { transform: scale(1.07); }
-
         .ch-body { padding: 0.65rem 0.8rem 0.75rem; }
         .ch-name {
             font-size: 0.82rem; font-weight: 600; color: #fff;
@@ -204,7 +179,14 @@
             background: rgba(255,255,255,0.1); border-radius: 4px;
             padding: 1px 5px; color: rgba(255,255,255,0.45);
         }
+        .ch-badge-mpd {
+            font-size: 0.58rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; padding: 2px 6px; border-radius: 4px;
+            background: rgba(139,92,246,0.25); color: rgba(167,139,250,0.9);
+            border: 1px solid rgba(139,92,246,0.3); flex-shrink: 0;
+        }
 
+        /* ── TOAST ── */
         #toast {
             position: fixed; bottom: 1.5rem; left: 50%; z-index: 200;
             transform: translateX(-50%) translateY(8px);
@@ -218,6 +200,7 @@
         }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+        /* ── FS HINT ── */
         #fs-hint {
             position: fixed; top: 50%; left: 50%; z-index: 60;
             transform: translate(-50%, -50%);
@@ -243,25 +226,14 @@
             #carousel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
         }
 
-        /* ── IFRAME MODE ────────────────────────────── */
+        /* ── IFRAME MODE ── */
         #iframe-player {
             position: fixed; inset: 0; width: 100%; height: 100%;
-            z-index: 1; border: none; background: #000;
-            display: none;
+            z-index: 1; border: none; background: #000; display: none;
         }
         #iframe-player.active { display: block; }
 
-        /* Badge MPD en cards */
-        .ch-badge-mpd {
-            font-size: 0.58rem; font-weight: 700; letter-spacing: 0.08em;
-            text-transform: uppercase; padding: 2px 6px;
-            border-radius: 4px; background: rgba(139,92,246,0.25);
-            color: rgba(167,139,250,0.9);
-            border: 1px solid rgba(139,92,246,0.3);
-            flex-shrink: 0;
-        }
-
-        /* ── UNMUTE OVERLAY ─────────────────────────── */
+        /* ── UNMUTE OVERLAY ── */
         #unmute-overlay {
             position: fixed; inset: 0; z-index: 100;
             display: flex; align-items: center; justify-content: center;
@@ -274,8 +246,7 @@
             display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22);
             border-radius: 20px; padding: 2rem 2.8rem; cursor: pointer;
-            transition: background 0.15s ease, transform 0.1s ease;
-            color: #fff;
+            transition: background 0.15s ease, transform 0.1s ease; color: #fff;
         }
         #unmute-btn:hover { background: rgba(255,255,255,0.18); }
         #unmute-btn:active { transform: scale(0.96); }
@@ -287,7 +258,6 @@
 
 <video id="video" autoplay playsinline muted></video>
 
-<!-- Unmute overlay — se muestra cuando autoplay arranca muteado -->
 <div id="unmute-overlay">
     <button id="unmute-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -302,16 +272,13 @@
 <iframe id="iframe-player"
     allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
     sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
-    allowfullscreen
     scrolling="no"></iframe>
 
-<!-- Loader compacto centrado — NO tapa el carrusel inferior -->
 <div id="loader">
     <div class="spinner"></div>
     <div id="loader-label">Conectando…</div>
 </div>
 
-<!-- Error compacto centrado — NO tapa el carrusel inferior -->
 <div id="error-state">
     <div class="err-icon">⚠</div>
     <div class="err-text">Sin señal</div>
@@ -359,8 +326,8 @@
     <p>Presioná <span class="fs-key">F</span> o el botón <span class="fs-key">⤢</span> arriba a la derecha</p>
 </div>
 
-<!-- SOLO TE CAMBIO LA PARTE IMPORTANTE (JS) -->
 <script>
+// ── CANALES ───────────────────────────────────────────
 const CHANNELS = [
     {
         name:   'Fox Sports',
@@ -368,7 +335,6 @@ const CHANNELS = [
         group:  'Señal 1',
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-91.playlist.m3u8',
-            // 'http://URL_RESPALDO_AMERICA',
         ]
     },
     {
@@ -412,7 +378,7 @@ const CHANNELS = [
         ]
     },
     {
-        name:   'El trece',
+        name:   'El Trece',
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
         group:  'Señal 1',
         urls: [
@@ -427,7 +393,6 @@ const CHANNELS = [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-32.playlist.m3u8',
         ]
     },
-
     // ── Canales MPD/DRM — se cargan en iframe ──────────
     {
         name:      'ESPN Premium',
@@ -455,78 +420,356 @@ const CHANNELS = [
     },
 ];
 
-// ── PROXY (FIX CLAVE) ────────────────────────────────
-const PROXY = window.location.origin + "/proxy?url=";
+// ── ESTADO ────────────────────────────────────────────
+const PROXY       = window.location.origin + "/proxy?url=";
+let hlsInstance   = null;
+let currentChIdx  = -1;
+let currentSrcIdx = 0;
+let osdTimer      = null;
+let toastTimer    = null;
+let fsHintShown   = false;
 
-// ── HLS MEJORADO ─────────────────────────────────────
-function createHLS(url, chIdx, srcIdx) {
-    return new Hls({
-        xhrSetup: function (xhr, url) {
-            xhr.withCredentials = false;
-        },
-        fetchSetup: function (context, initParams) {
-            return new Request(context.url, {
-                ...initParams,
-                credentials: "omit"
+// ── ELEMENTOS ─────────────────────────────────────────
+const video        = document.getElementById('video');
+const iframePlayer = document.getElementById('iframe-player');
+const loader       = document.getElementById('loader');
+const loaderLabel  = document.getElementById('loader-label');
+const errorState   = document.getElementById('error-state');
+const osd          = document.getElementById('osd');
+const osdLogo      = document.getElementById('osd-logo');
+const osdTitle     = document.getElementById('osd-title');
+const osdSrcLabel  = document.getElementById('osd-source-label');
+const srcSwitcher  = document.getElementById('source-switcher');
+const ui           = document.getElementById('ui');
+const carousel     = document.getElementById('carousel');
+const toast        = document.getElementById('toast');
+const fsHint       = document.getElementById('fs-hint');
+const fsBtn        = document.getElementById('fs-btn');
+const fsIconEnter  = document.getElementById('fs-icon-enter');
+const fsIconExit   = document.getElementById('fs-icon-exit');
+const unmuteOverlay = document.getElementById('unmute-overlay');
+const unmuteBtn    = document.getElementById('unmute-btn');
+
+// ── UTILIDADES ────────────────────────────────────────
+function showLoader(label = 'Conectando…') {
+    loaderLabel.textContent = label;
+    loader.classList.add('visible');
+    errorState.classList.remove('visible');
+}
+function hideLoader() { loader.classList.remove('visible'); }
+function showError()  { errorState.classList.add('visible'); hideLoader(); }
+function hideError()  { errorState.classList.remove('visible'); }
+
+function showToast(msg, duration = 2200) {
+    clearTimeout(toastTimer);
+    toast.textContent = msg;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+function showOSD(autohide = true) {
+    osd.classList.add('visible');
+    ui.classList.add('visible');
+    clearTimeout(osdTimer);
+    if (autohide) {
+        osdTimer = setTimeout(hideOSD, 4000);
+    }
+}
+function hideOSD() {
+    osd.classList.remove('visible');
+    ui.classList.remove('visible');
+}
+
+// ── CARRUSEL ──────────────────────────────────────────
+function buildCarousel() {
+    carousel.innerHTML = '';
+    CHANNELS.forEach((ch, idx) => {
+        const card = document.createElement('div');
+        card.className = 'ch-card';
+        card.tabIndex = 0;
+        card.dataset.idx = idx;
+
+        const isMPD = ch.group === 'MPD';
+        const srcCount = ch.urls ? ch.urls.length : 0;
+
+        card.innerHTML = `
+            <div class="ch-thumb">
+                <img src="${ch.poster}" alt="${ch.name}" loading="lazy">
+            </div>
+            <div class="ch-body">
+                <div class="ch-name">${ch.name}</div>
+                <div class="ch-meta">
+                    ${isMPD
+                        ? '<span class="ch-badge-mpd">DRM</span>'
+                        : `<span>${ch.group}</span>${srcCount > 1 ? `<span class="ch-src-count">${srcCount} fuentes</span>` : ''}`
+                    }
+                </div>
+            </div>`;
+
+        card.addEventListener('click', () => selectChannel(idx));
+        card.addEventListener('keydown', e => { if (e.key === 'Enter') selectChannel(idx); });
+        carousel.appendChild(card);
+    });
+}
+
+function updateCarouselActive(idx) {
+    document.querySelectorAll('.ch-card').forEach((c, i) => {
+        c.classList.toggle('active', i === idx);
+    });
+    // Scroll suave a la card activa
+    const activeCard = carousel.children[idx];
+    if (activeCard) {
+        activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+}
+
+// ── OSD INFO ──────────────────────────────────────────
+function updateOSD(chIdx, srcIdx) {
+    const ch = CHANNELS[chIdx];
+    osdLogo.src  = ch.poster;
+    osdTitle.textContent = ch.name;
+
+    if (ch.iframeUrl) {
+        osdSrcLabel.textContent = 'DRM · iframe';
+        srcSwitcher.innerHTML = '';
+    } else {
+        osdSrcLabel.textContent = `Fuente ${srcIdx + 1} de ${ch.urls.length}`;
+        srcSwitcher.innerHTML = '';
+        if (ch.urls.length > 1) {
+            ch.urls.forEach((_, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'src-btn' + (i === srcIdx ? ' active' : '');
+                btn.textContent = `Fuente ${i + 1}`;
+                btn.addEventListener('click', () => {
+                    currentSrcIdx = i;
+                    playSource(chIdx, i);
+                    updateOSD(chIdx, i);
+                });
+                srcSwitcher.appendChild(btn);
             });
-        },
+        }
+    }
+}
 
+// ── REPRODUCCIÓN HLS ──────────────────────────────────
+function createHLS() {
+    return new Hls({
+        xhrSetup(xhr) { xhr.withCredentials = false; },
+        fetchSetup(context, initParams) {
+            return new Request(context.url, { ...initParams, credentials: 'omit' });
+        },
         liveSyncDurationCount: 2,
         liveMaxLatencyDurationCount: 4,
         liveDurationInfinity: true,
         maxBufferLength: 8,
         maxMaxBufferLength: 16,
         maxBufferSize: 20 * 1000 * 1000,
-
         manifestLoadingMaxRetry: 4,
         levelLoadingMaxRetry: 4,
         fragLoadingMaxRetry: 6,
-
         manifestLoadingRetryDelay: 1000,
         levelLoadingRetryDelay: 1000,
         fragLoadingRetryDelay: 500,
     });
 }
 
-// ── REPRODUCCIÓN ─────────────────────────────────────
 function playSource(chIdx, srcIdx) {
-    const ch = CHANNELS[chIdx];
-    const originalUrl = ch.urls[srcIdx];
-    const url = PROXY + encodeURIComponent(originalUrl);
+    const ch  = CHANNELS[chIdx];
+    const url = PROXY + encodeURIComponent(ch.urls[srcIdx]);
 
-    if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
-    }
+    // Detener HLS previo
+    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+
+    showLoader('Conectando…');
+    hideError();
 
     if (Hls.isSupported()) {
-        hlsInstance = createHLS(url, chIdx, srcIdx);
-
+        hlsInstance = createHLS();
         hlsInstance.loadSource(url);
         hlsInstance.attachMedia(video);
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-            video.play().catch(() => {});
+            hideLoader();
+            video.play().catch(() => {
+                // Autoplay bloqueado — mostrar overlay de unmute
+                unmuteOverlay.classList.add('visible');
+            });
         });
 
-        // 🔥 DEBUG
         hlsInstance.on(Hls.Events.ERROR, (_, data) => {
-            console.log("HLS ERROR:", data);
-
             if (!data.fatal) return;
+            console.warn('HLS fatal error:', data.type, data.details);
 
             if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                // Intentar recuperar
                 hlsInstance.startLoad();
                 return;
             }
 
-            console.log("Error fatal → cambiando fuente");
+            // Si hay fuente alternativa, cambiar automáticamente
+            const ch = CHANNELS[chIdx];
+            const nextSrc = srcIdx + 1;
+            if (ch.urls && nextSrc < ch.urls.length) {
+                showToast(`Fuente ${srcIdx + 1} falló → probando fuente ${nextSrc + 1}`);
+                currentSrcIdx = nextSrc;
+                playSource(chIdx, nextSrc);
+                updateOSD(chIdx, nextSrc);
+            } else {
+                showError();
+            }
         });
 
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari nativo
         video.src = url;
-        video.play();
+        video.addEventListener('loadedmetadata', () => { hideLoader(); }, { once: true });
+        video.addEventListener('error', () => { showError(); }, { once: true });
+        video.play().catch(() => { unmuteOverlay.classList.add('visible'); });
+    } else {
+        showError();
     }
 }
+
+// ── SELECCIÓN DE CANAL ────────────────────────────────
+function selectChannel(idx) {
+    if (idx === currentChIdx) return;
+    currentChIdx  = idx;
+    currentSrcIdx = 0;
+
+    const ch = CHANNELS[idx];
+
+    // Detener lo que había
+    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    iframePlayer.classList.remove('active');
+    iframePlayer.src = '';
+    hideError();
+
+    updateCarouselActive(idx);
+    updateOSD(idx, 0);
+    showOSD();
+
+    if (ch.iframeUrl) {
+        // Canal DRM → iframe
+        hideLoader();
+        iframePlayer.src = ch.iframeUrl;
+        iframePlayer.classList.add('active');
+    } else {
+        // Canal HLS
+        video.muted = true; // garantizar autoplay
+        playSource(idx, 0);
+    }
+}
+
+// ── FULLSCREEN ────────────────────────────────────────
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen().catch(() => {});
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    const isFS = !!document.fullscreenElement;
+    fsIconEnter.style.display = isFS ? 'none' : '';
+    fsIconExit.style.display  = isFS ? '' : 'none';
+});
+
+fsBtn.addEventListener('click', toggleFullscreen);
+
+// ── TECLADO ───────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    switch (e.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+            e.preventDefault();
+            showOSD();
+            if (currentChIdx < CHANNELS.length - 1) selectChannel(currentChIdx + 1);
+            break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+            e.preventDefault();
+            showOSD();
+            if (currentChIdx > 0) selectChannel(currentChIdx - 1);
+            break;
+        case 'Enter':
+            e.preventDefault();
+            if (currentChIdx >= 0) selectChannel(currentChIdx);
+            break;
+        case 'f':
+        case 'F':
+            toggleFullscreen();
+            break;
+        case 'm':
+        case 'M':
+            video.muted = !video.muted;
+            showToast(video.muted ? 'Silenciado' : 'Con sonido');
+            break;
+        case ' ':
+            e.preventDefault();
+            showOSD();
+            break;
+        case 'Escape':
+            hideOSD();
+            break;
+    }
+});
+
+// ── MOUSE / TOUCH — mostrar OSD ───────────────────────
+let mouseMoveTimer = null;
+document.addEventListener('mousemove', () => {
+    showOSD();
+    clearTimeout(mouseMoveTimer);
+    mouseMoveTimer = setTimeout(hideOSD, 4000);
+});
+document.addEventListener('touchstart', () => { showOSD(); }, { passive: true });
+
+// ── UNMUTE ────────────────────────────────────────────
+unmuteBtn.addEventListener('click', () => {
+    video.muted = false;
+    video.play().catch(() => {});
+    unmuteOverlay.classList.remove('visible');
+});
+
+// ── VIDEO EVENTS ─────────────────────────────────────
+// "waiting" en live streams se dispara seguido — solo mostrar loader si tarda > 2s
+let waitingTimer = null;
+video.addEventListener('waiting', () => {
+    waitingTimer = setTimeout(() => showLoader('Cargando…'), 2000);
+});
+video.addEventListener('playing', () => {
+    clearTimeout(waitingTimer);
+    hideLoader();
+    hideError();
+});
+video.addEventListener('stalled', () => {
+    clearTimeout(waitingTimer);
+    waitingTimer = setTimeout(() => showLoader('Sin señal…'), 3000);
+});
+video.addEventListener('error', () => {
+    clearTimeout(waitingTimer);
+    showError();
+});
+
+// ── FS HINT (solo una vez, desktop sin fullscreen) ────
+setTimeout(() => {
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    if (!isMobile && !document.fullscreenElement && !fsHintShown) {
+        fsHintShown = true;
+        fsHint.classList.add('show');
+        setTimeout(() => fsHint.classList.remove('show'), 4000);
+    }
+}, 3000);
+
+// ── INIT ─────────────────────────────────────────────
+buildCarousel();
+selectChannel(0); // Arranca con el primer canal
 </script>
+</body>
 </html>
