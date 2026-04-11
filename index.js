@@ -63,4 +63,5 @@ app.get("/proxy", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("Proxy corriendo 🚀"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Proxy corriendo 🚀"));
