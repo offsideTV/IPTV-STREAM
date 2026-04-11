@@ -4,10 +4,9 @@ import { readFileSync } from "fs";
 
 const app = express();
 
-// 🔥 URL base dinámica (funciona en Render)
-const BASE_URL = process.env.RENDER_EXTERNAL_URL || "http://localhost:3000";
+const BASE_URL = `https://${process.env.RENDER_EXTERNAL_HOSTNAME}`;
 
-// ── CORS ──
+// CORS
 app.use((req, res, next) => {
   res.set("Access-Control-Allow-Origin", "*");
   res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -16,20 +15,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// 🔥 Servir el player HTML
 app.get("/", (req, res) => {
   res.send(readFileSync("index.html", "utf8"));
 });
 
-// 🔥 Endpoint ping (para evitar sleep)
 app.get("/ping", (req, res) => {
   res.send("pong");
 });
 
-// 🔥 Proxy
 app.get("/proxy", async (req, res) => {
   const url = req.query.url;
-
   if (!url) return res.status(400).send("Falta URL");
 
   try {
@@ -37,33 +32,35 @@ app.get("/proxy", async (req, res) => {
       headers: {
         "User-Agent": "Mozilla/5.0",
         "Referer": url,
+        "Origin": url
       }
     });
 
     const contentType = response.headers.get("content-type") || "application/octet-stream";
-    res.set("Content-Type", contentType);
 
-    // 🔥 Reescribir m3u8
+    // M3U8
     if (url.includes(".m3u8")) {
       const text = await response.text();
       const base = url.substring(0, url.lastIndexOf("/") + 1);
 
-      const modified = text.replace(/^(?!#)(.*\.ts|.*\.m3u8)/gm, (match) => {
+      const modified = text.replace(/^(?!#)(.+)$/gm, (match) => {
         let absolute = match.startsWith("http") ? match : base + match;
         return `${BASE_URL}/proxy?url=${encodeURIComponent(absolute)}`;
       });
 
+      res.set("Content-Type", "application/vnd.apple.mpegurl");
       return res.send(modified);
     }
 
-    // 🔥 Segmentos (.ts)
+    // TS u otros
     const buffer = await response.arrayBuffer();
+    res.set("Content-Type", contentType);
     res.send(Buffer.from(buffer));
 
   } catch (err) {
-    console.error("Proxy error:", err.message);
+    console.error(err);
     res.status(500).send("Error en proxy");
   }
 });
 
-app.listen(3000, () => console.log(`Proxy corriendo 🚀 — BASE_URL: ${BASE_URL}`));
+app.listen(3000, () => console.log("Proxy corriendo 🚀"));
