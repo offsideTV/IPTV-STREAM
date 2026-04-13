@@ -112,98 +112,180 @@
         /* ── UI INFERIOR ── */
         #ui {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-            padding: 5rem 0 1.5rem;
+            padding: 5rem 0 calc(1.5rem + env(safe-area-inset-bottom, 0px));
             background: linear-gradient(to top, rgba(0,0,0,0.97) 40%, transparent 100%);
             opacity: 0; pointer-events: none;
             transition: opacity 0.4s ease;
+            overflow: visible;
         }
         #ui.visible { opacity: 1; pointer-events: auto; }
         .ui-header {
-            display: flex; align-items: flex-end; justify-content: space-between;
-            margin-bottom: 0.85rem; padding: 0 1.2rem;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 0.7rem; padding: 0 1rem 0 1.2rem;
         }
-        .ui-title { font-size: 0.9rem; font-weight: 700; letter-spacing: -0.02em; }
-        .ui-hint { font-size: 0.68rem; color: rgba(255,255,255,0.3); margin-top: 2px; }
-        .brand { font-size: 0.85rem; font-weight: 800; letter-spacing: -0.04em; color: rgba(255,255,255,0.75); }
-        .brand em { color: rgba(255,255,255,0.25); font-style: normal; }
+        .ui-header-left { display: flex; align-items: center; gap: 0.75rem; }
+        .ui-title {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+            text-transform: uppercase; color: rgba(255,255,255,0.38);
+        }
+        .ui-ch-count {
+            font-size: 0.65rem; font-weight: 600;
+            color: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05); border-radius: 20px;
+            padding: 2px 8px; border: 1px solid rgba(255,255,255,0.07);
+        }
+        .ui-hint { display: none; }
+        .brand { font-size: 0.82rem; font-weight: 800; letter-spacing: -0.04em; color: rgba(255,255,255,0.3); }
+        .brand em { color: rgba(255,255,255,0.12); font-style: normal; }
 
-        /* ── CAROUSEL CON FLECHAS ── */
+        /* ── CHANNEL SHELF ── */
         .carousel-wrapper {
-            display: flex; align-items: center; gap: 0; position: relative;
+            display: flex; align-items: stretch; position: relative;
+            overflow: hidden;
         }
-        .carousel-arrow {
-            flex-shrink: 0; width: 36px; height: 36px;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 10px; cursor: pointer; color: #fff;
-            transition: background 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
-            margin: 0 0.5rem; flex-shrink: 0;
-        }
-        .carousel-arrow:hover { background: rgba(255,255,255,0.18); }
-        .carousel-arrow:active { transform: scale(0.9); }
-        .carousel-arrow.disabled { opacity: 0.2; pointer-events: none; }
-        .carousel-arrow svg { width: 16px; height: 16px; }
 
+        /* Flechas laterales — anchas, full-height, glassmorphism */
+        .carousel-arrow {
+            flex-shrink: 0; width: 52px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 100%);
+            border: none; cursor: pointer; color: rgba(255,255,255,0.7);
+            transition: color 0.15s ease, background 0.15s ease;
+            position: relative; z-index: 2;
+        }
+        #arrow-right {
+            background: linear-gradient(to left, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 100%);
+        }
+        .carousel-arrow:hover { color: #fff; }
+        .carousel-arrow:active { color: rgba(255,255,255,0.5); }
+        .carousel-arrow.disabled { opacity: 0.18; pointer-events: none; }
+        .carousel-arrow svg { width: 22px; height: 22px; stroke-width: 2; }
+
+        /* Track del carrusel */
         #carousel {
-            display: flex; gap: 0.65rem;
+            display: flex; gap: 10px;
             overflow: hidden;
             flex: 1;
-            padding: 4px 0 6px;
+            padding: 6px 4px 10px;
+            min-height: 120px;
+            position: relative;
         }
 
+        /* Cards horizontales tipo Netflix/TV shelf */
         .ch-card {
             flex: 0 0 auto;
-            width: 136px; border-radius: 10px; overflow: hidden;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.07);
+            width: 160px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.06);
+            border: 1.5px solid rgba(255,255,255,0.07);
             cursor: pointer; outline: none; position: relative;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+            transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+                        box-shadow 0.22s ease,
+                        border-color 0.2s ease,
+                        background 0.2s ease;
+            display: flex; flex-direction: column;
         }
         .ch-card:hover, .ch-card:focus {
-            border-color: rgba(255,255,255,0.28);
-            background: rgba(255,255,255,0.09);
+            transform: translateY(-4px) scale(1.03);
+            border-color: rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+            z-index: 5;
         }
         .ch-card.active {
-            border-color: rgba(255,255,255,0.5);
-            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.18), 0 8px 24px rgba(0,0,0,0.5);
         }
-        .ch-card.active::before {
-            content: ''; position: absolute; top: 6px; right: 6px; z-index: 5;
-            width: 6px; height: 6px; border-radius: 50%; background: #22c55e;
-            box-shadow: 0 0 0 2px rgba(34,197,94,0.25);
-            animation: blink 1.4s ease infinite;
+        .ch-card.active:hover, .ch-card.active:focus {
+            transform: translateY(-4px) scale(1.03);
         }
+
+        /* Indicador activo — barra inferior */
+        .ch-card.active::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+            height: 3px; border-radius: 0 0 12px 12px;
+            background: linear-gradient(to right, #22c55e, #4ade80);
+            box-shadow: 0 0 12px rgba(34,197,94,0.5);
+        }
+
+        /* Thumbnail con logo grande centrado */
         .ch-thumb {
-            width: 100%; aspect-ratio: 16/9; overflow: hidden;
-            background: rgba(255,255,255,0.02);
+            width: 100%; aspect-ratio: 16/9;
+            background: rgba(255,255,255,0.03);
             display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        .ch-thumb::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, transparent 70%);
+            pointer-events: none;
         }
         .ch-thumb img {
-            width: 80%; height: 80%; object-fit: contain;
-            opacity: 0.92; transition: opacity 0.2s ease;
+            width: 72%; height: 72%; object-fit: contain;
+            opacity: 0.88; transition: opacity 0.2s ease, transform 0.2s ease;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
         }
         .ch-card:hover .ch-thumb img,
-        .ch-card:focus .ch-thumb img { opacity: 1; }
-        .ch-body { padding: 0.45rem 0.6rem 0.5rem; }
+        .ch-card:focus .ch-thumb img,
+        .ch-card.active .ch-thumb img {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        /* Info inferior */
+        .ch-body {
+            padding: 0.45rem 0.65rem 0.55rem;
+            display: flex; align-items: center; justify-content: space-between; gap: 4px;
+        }
         .ch-name {
-            font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.9);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;
+            font-size: 0.74rem; font-weight: 700; color: rgba(255,255,255,0.92);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            letter-spacing: -0.01em; flex: 1; min-width: 0;
         }
         .ch-meta {
-            font-size: 0.56rem; font-weight: 600; letter-spacing: 0.07em;
-            text-transform: uppercase; color: rgba(255,255,255,0.25);
-            display: flex; align-items: center; gap: 4px;
+            display: flex; align-items: center; gap: 3px; flex-shrink: 0;
         }
         .ch-src-count {
-            background: rgba(255,255,255,0.08); border-radius: 3px;
-            padding: 1px 4px; color: rgba(255,255,255,0.38);
+            font-size: 0.52rem; font-weight: 700; letter-spacing: 0.06em;
+            text-transform: uppercase;
+            background: rgba(255,255,255,0.1); border-radius: 4px;
+            padding: 2px 5px; color: rgba(255,255,255,0.45);
         }
         .ch-badge-mpd {
             font-size: 0.52rem; font-weight: 700; letter-spacing: 0.08em;
-            text-transform: uppercase; padding: 1px 5px; border-radius: 3px;
-            background: rgba(139,92,246,0.2); color: rgba(167,139,250,0.85);
-            border: 1px solid rgba(139,92,246,0.28); flex-shrink: 0;
+            text-transform: uppercase; padding: 2px 5px; border-radius: 4px;
+            background: rgba(139,92,246,0.18); color: rgba(167,139,250,0.9);
+            border: 1px solid rgba(139,92,246,0.3);
+        }
+
+        /* Número de canal flotante */
+        .ch-num {
+            position: absolute; top: 6px; left: 7px; z-index: 3;
+            font-size: 0.58rem; font-weight: 800; letter-spacing: 0.04em;
+            color: rgba(255,255,255,0.32);
+            background: rgba(0,0,0,0.45);
+            border-radius: 4px; padding: 1px 5px;
+            backdrop-filter: blur(4px);
+            transition: color 0.2s ease;
+        }
+        .ch-card.active .ch-num,
+        .ch-card:hover .ch-num { color: rgba(255,255,255,0.6); }
+
+        /* Shimmer en hover */
+        .ch-card::before {
+            content: ''; position: absolute; inset: 0; z-index: 1; border-radius: 12px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 55%);
+            opacity: 0; transition: opacity 0.2s ease; pointer-events: none;
+        }
+        .ch-card:hover::before, .ch-card:focus::before { opacity: 1; }
+
+        /* Gradiente inferior del thumb */
+        .ch-thumb::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 45%;
+            background: linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 100%);
+            pointer-events: none;
         }
 
         /* ── TOAST ── */
@@ -239,9 +321,13 @@
             padding: 1px 7px; font-family: monospace; font-size: 0.8rem; color: #fff;
         }
 
-        /* carousel sin scrollbar visible */
+        /* carousel — scroll interno sin scrollbar visible */
         #carousel::-webkit-scrollbar { display: none; }
-        #carousel { scrollbar-width: none; }
+        #carousel {
+            scrollbar-width: none;
+            overflow-x: scroll !important;
+            scroll-behavior: smooth;
+        }
 
         /* ── IFRAME MODE ── */
         #iframe-player {
@@ -327,9 +413,9 @@
 
 <div id="ui">
     <div class="ui-header">
-        <div>
-            <div class="ui-title">Guía de canales</div>
-            <div class="ui-hint">← → para navegar &nbsp;·&nbsp; Enter para sintonizar &nbsp;·&nbsp; F para pantalla completa</div>
+        <div class="ui-header-left">
+            <div class="ui-title">Canales</div>
+            <div class="ui-ch-count" id="ch-count"></div>
         </div>
         <div class="brand"></div>
     </div>
@@ -357,11 +443,16 @@
 
 <script>
 // ── CANALES ───────────────────────────────────────────
+// urlsLocal → se usan cuando estás en la red del proveedor de casa (192.168.248.x)
+// urls      → fuentes globales, se usan siempre que no haya red local (o como fallback)
 const CHANNELS = [
     {
         name:   'Fox Sports',
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Fox-logo.webp',
         group:  'Señal 1',
+        urlsLocal: [
+            // 'http://192.168.248.5/Live/.../fox.m3u8',  ← agregar cuando tengas
+        ],
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-91.playlist.m3u8',
         ]
@@ -370,6 +461,9 @@ const CHANNELS = [
         name:   'ESPN',
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN1-logo.webp',
         group:  'Señal 1',
+        urlsLocal: [
+            // 'http://192.168.248.5/Live/.../espn1.m3u8',
+        ],
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-94.playlist.m3u8',
         ]
@@ -378,6 +472,9 @@ const CHANNELS = [
         name:   'ESPN 2',
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN2-logo.webp',
         group:  'Señal 1',
+        urlsLocal: [
+            // 'http://192.168.248.5/Live/.../espn2.m3u8',
+        ],
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-97.playlist.m3u8',
         ]
@@ -386,6 +483,9 @@ const CHANNELS = [
         name:   'Telefe',
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Telefe-logo.webp',
         group:  'Señal 1',
+        urlsLocal: [
+            // 'http://192.168.248.5/Live/.../telefe.m3u8',
+        ],
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/telefe.playlist.m3u8',
         ]
@@ -394,6 +494,9 @@ const CHANNELS = [
         name:   'TyC Sports',
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TyCSports-logo.webp',
         group:  'Señal 1',
+        urlsLocal: [
+            // 'http://192.168.248.5/Live/.../tycsports.m3u8',
+        ],
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-90.playlist.m3u8',
         ]
@@ -402,6 +505,9 @@ const CHANNELS = [
         name:   'Dsports',
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
         group:  'Señal 1',
+        urlsLocal: [
+            // 'http://192.168.248.5/Live/.../dsports.m3u8',
+        ],
         urls: [
             'http://217.26.190.76:8888/play/a0co/index.m3u8',
         ]
@@ -410,6 +516,9 @@ const CHANNELS = [
         name:   'El Trece',
         poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891912/ml2lcrholt2upgw3iasl.webp',
         group:  'Señal 1',
+        urlsLocal: [
+            // 'http://192.168.248.5/Live/.../trece.m3u8',
+        ],
         urls: [
             'https://livetrx01.vodgc.net/eltrecetv/tracks-v1a1/mono.m3u8',
         ]
@@ -418,17 +527,22 @@ const CHANNELS = [
         name:   'Disney Channel',
         poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891943/pzmczdnn9zq9uc7our7c.webp',
         group:  'Señal 1',
+        urlsLocal: [
+            // 'http://192.168.248.5/Live/.../disney.m3u8',
+        ],
         urls: [
             'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-32.playlist.m3u8',
         ]
     },
-
-     {
+    {
         name:   'ESPN Premium 2',
         poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPNPremium-logo.webp',
         group:  'Señal 1',
-        urls: [
+        urlsLocal: [
             'http://192.168.248.5/Live/92e5b55e4253e81061b20e5c4fa93392/local-02_720.m3u8',
+        ],
+        urls: [
+            // sin fuente global por ahora
         ]
     },
     // ── Canales MPD/DRM — se cargan en iframe ──────────
@@ -459,13 +573,51 @@ const CHANNELS = [
 ];
 
 // ── ESTADO ────────────────────────────────────────────
-const PROXY       = window.location.origin + "/proxy?url=";
-let hlsInstance   = null;
-let currentChIdx  = -1;
-let currentSrcIdx = 0;
-let osdTimer      = null;
-let toastTimer    = null;
-let fsHintShown   = false;
+const PROXY        = window.location.origin + "/proxy?url=";
+let hlsInstance    = null;
+let currentChIdx   = -1;
+let currentSrcIdx  = 0;
+let osdTimer       = null;
+let toastTimer     = null;
+let fsHintShown    = false;
+let isLocalNetwork = false; // se actualiza al init con detección automática
+
+// Proxy solo para HTTP externo — HTTPS y URLs de red local van directo
+function isLocalUrl(url) {
+    return /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url);
+}
+function proxyUrl(url) {
+    if (url.startsWith('https://')) return url;    // HTTPS: directo
+    if (isLocalUrl(url))           return url;    // IP privada: directo (Render no llega)
+    return PROXY + encodeURIComponent(url);        // HTTP externo: por proxy
+}
+
+// Detección de red local: intenta hacer un request directo al servidor IPTV.
+// Usamos una imagen/recurso pequeño con XMLHttpRequest (más confiable que fetch no-cors
+// para detectar si la IP es alcanzable en la red local).
+const LOCAL_GATEWAY = 'http://192.168.248.5';
+async function detectLocalNetwork() {
+    return new Promise(resolve => {
+        const xhr = new XMLHttpRequest();
+        const done = (result) => { isLocalNetwork = result; resolve(); };
+        const timeout = setTimeout(() => { xhr.abort(); done(false); }, 2000);
+        xhr.open('GET', LOCAL_GATEWAY + '/ping', true);
+        xhr.onload  = () => { clearTimeout(timeout); done(true); };
+        xhr.onerror = () => { clearTimeout(timeout); done(false); };
+        xhr.onabort = () => done(false);
+        xhr.send();
+    }).then(() => console.log('[IPTV] Red local:', isLocalNetwork));
+}
+
+// Devuelve las URLs efectivas del canal según la red actual
+// En red local: URLs locales primero, luego globales como fallback
+// Fuera: solo globales
+function resolveUrls(ch) {
+    if (isLocalNetwork && ch.urlsLocal && ch.urlsLocal.length > 0) {
+        return [...ch.urlsLocal, ...(ch.urls || [])];
+    }
+    return ch.urls || [];
+}
 
 // ── ELEMENTOS ─────────────────────────────────────────
 const video        = document.getElementById('video');
@@ -527,10 +679,12 @@ function buildCarousel() {
         card.tabIndex = 0;
         card.dataset.idx = idx;
 
-        const isMPD = ch.group === 'MPD';
-        const srcCount = ch.urls ? ch.urls.length : 0;
+        const isMPD    = ch.group === 'MPD';
+        const srcCount = resolveUrls(ch).length;
+        const chNum    = String(idx + 1).padStart(2, '0');
 
         card.innerHTML = `
+            <span class="ch-num">${chNum}</span>
             <div class="ch-thumb">
                 <img src="${ch.poster}" alt="${ch.name}" loading="lazy">
             </div>
@@ -539,7 +693,7 @@ function buildCarousel() {
                 <div class="ch-meta">
                     ${isMPD
                         ? '<span class="ch-badge-mpd">DRM</span>'
-                        : `<span>${ch.group}</span>${srcCount > 1 ? `<span class="ch-src-count">${srcCount} fuentes</span>` : ''}`
+                        : srcCount > 1 ? `<span class="ch-src-count">${srcCount}</span>` : ''
                     }
                 </div>
             </div>`;
@@ -548,6 +702,10 @@ function buildCarousel() {
         card.addEventListener('keydown', e => { if (e.key === 'Enter') selectChannel(idx); });
         carousel.appendChild(card);
     });
+
+    // Actualizar contador
+    const countEl = document.getElementById('ch-count');
+    if (countEl) countEl.textContent = CHANNELS.length + ' canales';
 }
 
 function updateCarouselActive(idx) {
@@ -576,18 +734,20 @@ function updateOSD(chIdx, srcIdx) {
         osdSrcLabel.textContent = 'DRM · iframe';
         srcSwitcher.innerHTML = '';
     } else {
-        osdSrcLabel.textContent = `Fuente ${srcIdx + 1} de ${ch.urls.length}`;
+        const urls = resolveUrls(ch);
+        osdSrcLabel.textContent = `Fuente ${srcIdx + 1} de ${urls.length}${isLocalNetwork && ch.urlsLocal?.length ? ' · 🏠 local' : ''}`;
         srcSwitcher.innerHTML = '';
-        if (ch.urls.length > 1) {
-            ch.urls.forEach((_, i) => {
+        if (urls.length > 1) {
+            urls.forEach((u, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'src-btn' + (i === srcIdx ? ' active' : '');
-                btn.textContent = `Fuente ${i + 1}`;
+                const isLocal = ch.urlsLocal && i < ch.urlsLocal.length;
+                btn.textContent = isLocal ? `Fuente ${i + 1} ·local` : `Fuente ${i + 1}`;
                 btn.addEventListener('click', () => {
                     currentSrcIdx = i;
                     playSource(chIdx, i);
                     updateOSD(chIdx, i);
-                    Cast.updateSource(PROXY + encodeURIComponent(ch.urls[i]));
+                    Cast.updateSource(proxyUrl(u));
                 });
                 srcSwitcher.appendChild(btn);
             });
@@ -618,8 +778,10 @@ function createHLS() {
 }
 
 function playSource(chIdx, srcIdx) {
-    const ch  = CHANNELS[chIdx];
-    const url = PROXY + encodeURIComponent(ch.urls[srcIdx]);
+    const ch       = CHANNELS[chIdx];
+    const urls     = resolveUrls(ch);
+    const rawUrl   = urls[srcIdx];
+    const url      = proxyUrl(rawUrl);
 
     // Detener HLS previo
     if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
@@ -634,8 +796,11 @@ function playSource(chIdx, srcIdx) {
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
             hideLoader();
+            video.muted = false;
             video.play().catch(() => {
-                // Autoplay bloqueado — mostrar overlay de unmute
+                // Navegador bloqueó audio → silenciar y reintentar
+                video.muted = true;
+                video.play().catch(() => {});
                 unmuteOverlay.classList.add('visible');
             });
         });
@@ -651,9 +816,10 @@ function playSource(chIdx, srcIdx) {
             }
 
             // Si hay fuente alternativa, cambiar automáticamente
-            const ch = CHANNELS[chIdx];
+            const ch      = CHANNELS[chIdx];
+            const urls    = resolveUrls(ch);
             const nextSrc = srcIdx + 1;
-            if (ch.urls && nextSrc < ch.urls.length) {
+            if (urls && nextSrc < urls.length) {
                 showToast(`Fuente ${srcIdx + 1} falló → probando fuente ${nextSrc + 1}`);
                 currentSrcIdx = nextSrc;
                 playSource(chIdx, nextSrc);
@@ -668,7 +834,12 @@ function playSource(chIdx, srcIdx) {
         video.src = url;
         video.addEventListener('loadedmetadata', () => { hideLoader(); }, { once: true });
         video.addEventListener('error', () => { showError(); }, { once: true });
-        video.play().catch(() => { unmuteOverlay.classList.add('visible'); });
+        video.muted = false;
+        video.play().catch(() => {
+            video.muted = true;
+            video.play().catch(() => {});
+            unmuteOverlay.classList.add('visible');
+        });
     } else {
         showError();
     }
@@ -704,10 +875,9 @@ function selectChannel(idx) {
         Cast.updateChannel(null, ch.name, ch.poster, true);
     } else {
         // Canal HLS
-        video.muted = true; // garantizar autoplay
         playSource(idx, 0);
         // Notificar al módulo Cast con la primera fuente
-        Cast.updateChannel(PROXY + encodeURIComponent(ch.urls[0]), ch.name, ch.poster, false);
+        Cast.updateChannel(proxyUrl(resolveUrls(ch)[0]), ch.name, ch.poster, false);
     }
 }
 
@@ -819,54 +989,61 @@ setTimeout(() => {
 const arrowLeft  = document.getElementById('arrow-left');
 const arrowRight = document.getElementById('arrow-right');
 
-// Cuántas cards son visibles según el ancho del carousel
-function visibleCount() {
-    const cardW = 136 + 10; // width + gap
-    return Math.max(1, Math.floor(carousel.offsetWidth / cardW));
+const CARD_W = 160; // debe coincidir con CSS width
+const CARD_GAP = 10;
+
+function cardStep() {
+    return CARD_W + CARD_GAP;
 }
 
-let carouselOffset = 0; // índice del primer canal visible
+function visibleCount() {
+    return Math.max(1, Math.floor(carousel.offsetWidth / cardStep()));
+}
 
-function updateCarouselPosition(smooth = true) {
-    const cardW = 136 + 10;
-    const target = carouselOffset * cardW;
-    if (smooth) {
-        carousel.style.transition = 'transform 0.35s cubic-bezier(0.4,0,0.2,1)';
-    } else {
-        carousel.style.transition = 'none';
-    }
-    carousel.style.transform = `translateX(-${target}px)`;
+function getCarouselScroll() {
+    return carousel.scrollLeft;
+}
 
-    // estado flechas
-    arrowLeft.classList.toggle('disabled', carouselOffset <= 0);
-    arrowRight.classList.toggle('disabled', carouselOffset + visibleCount() >= CHANNELS.length);
+function updateArrowState() {
+    const atStart = carousel.scrollLeft <= 2;
+    const atEnd   = carousel.scrollLeft + carousel.offsetWidth >= carousel.scrollWidth - 2;
+    arrowLeft.classList.toggle('disabled', atStart);
+    arrowRight.classList.toggle('disabled', atEnd);
+}
+
+// Scroll suave usando scrollLeft nativo
+function scrollCarouselTo(px, smooth = true) {
+    carousel.scrollTo({ left: px, behavior: smooth ? 'smooth' : 'instant' });
 }
 
 arrowLeft.addEventListener('click', () => {
-    carouselOffset = Math.max(0, carouselOffset - visibleCount());
-    updateCarouselPosition();
+    const step = cardStep() * visibleCount();
+    scrollCarouselTo(Math.max(0, carousel.scrollLeft - step));
     showOSD();
 });
 arrowRight.addEventListener('click', () => {
-    const max = Math.max(0, CHANNELS.length - visibleCount());
-    carouselOffset = Math.min(max, carouselOffset + visibleCount());
-    updateCarouselPosition();
+    const step = cardStep() * visibleCount();
+    const max  = carousel.scrollWidth - carousel.offsetWidth;
+    scrollCarouselTo(Math.min(max, carousel.scrollLeft + step));
     showOSD();
 });
 
+carousel.addEventListener('scroll', updateArrowState, { passive: true });
+
 // Asegurarse que la card activa sea visible al seleccionar
 function scrollCarouselToIdx(idx) {
-    const vc = visibleCount();
-    if (idx < carouselOffset) {
-        carouselOffset = idx;
-    } else if (idx >= carouselOffset + vc) {
-        carouselOffset = idx - vc + 1;
+    const cardLeft  = idx * cardStep();
+    const cardRight = cardLeft + CARD_W;
+    const viewLeft  = carousel.scrollLeft;
+    const viewRight = viewLeft + carousel.offsetWidth;
+
+    if (cardLeft < viewLeft) {
+        scrollCarouselTo(cardLeft);
+    } else if (cardRight > viewRight) {
+        scrollCarouselTo(cardRight - carousel.offsetWidth + CARD_GAP);
     }
-    updateCarouselPosition();
 }
 
-// Reemplazar updateCarouselActive para usar scrollCarouselToIdx
-// (se hace ANTES de buildCarousel y selectChannel para que ya esté lista)
 window._patchedUpdateCarouselActive = function(idx) {
     document.querySelectorAll('.ch-card').forEach((c, i) => {
         c.classList.toggle('active', i === idx);
@@ -875,18 +1052,15 @@ window._patchedUpdateCarouselActive = function(idx) {
 };
 
 // ── INIT ─────────────────────────────────────────────
-buildCarousel();
-Cast.init(showToast);
-
-// Inicializar posición del carrusel
-updateCarouselPosition(false);
-
-// Arrancar con el primer canal — mostrar overlay de sonido siempre
-// ya que los navegadores bloquean audio sin interacción del usuario
-selectChannel(0);
-// Mostrar el overlay de unmute inmediatamente: el video empieza muted
-// y el usuario debe hacer click para activar el sonido (política de autoplay)
-unmuteOverlay.classList.add('visible');
+// Primero detectar si estamos en red local, luego arrancar
+showLoader('Detectando red…');
+detectLocalNetwork().then(() => {
+    if (isLocalNetwork) showToast('Red local detectada', 3000);
+    buildCarousel();
+    Cast.init(showToast);
+    updateArrowState();
+    selectChannel(0);
+});
 </script>
 </body>
 </html>
