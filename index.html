@@ -446,130 +446,422 @@
 // urlsLocal → se usan cuando estás en la red del proveedor de casa (192.168.248.x)
 // urls      → fuentes globales, se usan siempre que no haya red local (o como fallback)
 const CHANNELS = [
-    {
-        name:   'Fox Sports',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Fox-logo.webp',
-        group:  'Señal 1',
-        urlsLocal: [
-            // 'http://192.168.248.5/Live/.../fox.m3u8',  ← agregar cuando tengas
-        ],
-        urls: [
-            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-91.playlist.m3u8',
-        ]
-    },
-    {
-        name:   'ESPN',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN1-logo.webp',
-        group:  'Señal 1',
-        urlsLocal: [
-            // 'http://192.168.248.5/Live/.../espn1.m3u8',
-        ],
-        urls: [
-            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-94.playlist.m3u8',
-        ]
-    },
-    {
-        name:   'ESPN 2',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN2-logo.webp',
-        group:  'Señal 1',
-        urlsLocal: [
-            // 'http://192.168.248.5/Live/.../espn2.m3u8',
-        ],
-        urls: [
-            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-97.playlist.m3u8',
-        ]
-    },
-    {
-        name:   'Telefe',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Telefe-logo.webp',
-        group:  'Señal 1',
-        urlsLocal: [
-            // 'http://192.168.248.5/Live/.../telefe.m3u8',
-        ],
-        urls: [
-            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/telefe.playlist.m3u8',
-        ]
-    },
-    {
-        name:   'TyC Sports',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TyCSports-logo.webp',
-        group:  'Señal 1',
-        urlsLocal: [
-            // 'http://192.168.248.5/Live/.../tycsports.m3u8',
-        ],
-        urls: [
-            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-90.playlist.m3u8',
-        ]
-    },
-    {
-        name:   'Dsports',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
-        group:  'Señal 1',
-        urlsLocal: [
-            // 'http://192.168.248.5/Live/.../dsports.m3u8',
-        ],
-        urls: [
-            'http://217.26.190.76:8888/play/a0co/index.m3u8',
-        ]
-    },
-    {
-        name:   'El Trece',
-        poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891912/ml2lcrholt2upgw3iasl.webp',
-        group:  'Señal 1',
-        urlsLocal: [
-            // 'http://192.168.248.5/Live/.../trece.m3u8',
-        ],
-        urls: [
-            'https://livetrx01.vodgc.net/eltrecetv/tracks-v1a1/mono.m3u8',
-        ]
-    },
-    {
-        name:   'Disney Channel',
-        poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891943/pzmczdnn9zq9uc7our7c.webp',
-        group:  'Señal 1',
-        urlsLocal: [
-            // 'http://192.168.248.5/Live/.../disney.m3u8',
-        ],
-        urls: [
-            'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-32.playlist.m3u8',
-        ]
-    },
-    {
-        name:   'ESPN Premium 2',
-        poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPNPremium-logo.webp',
-        group:  'Señal 1',
-        urlsLocal: [
-            'http://192.168.248.5/Live/92e5b55e4253e81061b20e5c4fa93392/local-02_720.m3u8',
-        ],
-        urls: [
-            // sin fuente global por ahora
-        ]
-    },
-    // ── Canales MPD/DRM — se cargan en iframe ──────────
-    {
-        name:      'ESPN Premium',
-        poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPNPremium-logo.webp',
-        group:     'MPD',
-        iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=Rm94X1Nwb3J0c19QcmVtaXVuX0hE&start=true',
-    },
-    {
-        name:      'TNT Sports',
-        poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TNTSports-logo.webp',
-        group:     'MPD',
-        iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=VE5UX1Nwb3J0c19IRA&start=true',
-    },
-    {
-        name:      'Disney+ 1',
-        poster:    'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891925/yomgjkrbwilo2uah6mlz.webp',
-        group:     'MPD',
-        iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=RVNQTl9VWQ==&start=true',
-    },
-    {
-        name:      'Disney+ 2',
-        poster:    'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891925/yomgjkrbwilo2uah6mlz.webp',
-        group:     'MPD',
-        iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=RVNQTjJfVVk=&start=true',
-    },
+
+  // ── General ──────────────────────────────────────────
+{
+    name:   'America TV',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776060924/jsybrlnpmmq6gzdqxphb.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-17.playlist.m3u8',
+    ]
+},
+{
+    name:   'TvPública',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/tvpublica.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/tvpublica.playlist.m3u8',
+    ]
+},
+{
+    name:   'Telefe',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Telefe-logo.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/telefe.playlist.m3u8',
+    ]
+},
+{
+    name:   'El Trece',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891912/ml2lcrholt2upgw3iasl.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'https://livetrx01.vodgc.net/eltrecetv/tracks-v1a1/mono.m3u8',
+    ]
+},
+{
+    name:   'C5N',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061311/qh6551ly8rza0ph0zw2x.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/c5n.playlist.m3u8',
+    ]
+},
+{
+    name:   'TN',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061363/fjzwqladzkittv8o9cnt.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/tn.playlist.m3u8',
+    ]
+},
+{
+    name:   'Cronica TV',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061417/haefgny7rmmlupuswdcn.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/CronicaTv.playlist.m3u8',
+    ]
+},
+{
+    name:   'A24',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061521/riqloij2exfviq3dnw8f.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/a24.playlist.m3u8',
+    ]
+},
+{
+    name:   'Sony',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061563/p8095uxgnnhhgrwetxup.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-70.playlist.m3u8',
+    ]
+},
+{
+    name:   'AXN',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061624/koycbti8njl9wdg4o8cy.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-77.playlist.m3u8',
+    ]
+},
+{
+    name:   'Comedy Central',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061679/oq2idelabryqlqvhekqo.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-60.playlist.m3u8',
+    ]
+},
+{
+    name:   'Ciudad Magazine',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061873/m2b7kwlicvhouoayjpis.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/ciudadmagazine.playlist.m3u8',
+    ]
+},
+{
+    name:   'Volver',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061993/glfw3yonxivffe9tuqqf.webp',
+    group:  'General',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-74.playlist.m3u8',
+    ]
+},
+
+// ── Deportes ─────────────────────────────────────────
+{
+    name:   'TyC Sports',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TyCSports-logo.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-90.playlist.m3u8',
+    ]
+},
+{
+    name:   'ESPN',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN1-logo.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-94.playlist.m3u8',
+    ]
+},
+{
+    name:   'ESPN 2',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN2-logo.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-97.playlist.m3u8',
+    ]
+},
+{
+    name:   'ESPN 3',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPN3-logo.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-96.playlist.m3u8',
+    ]
+},
+{
+    name:   'ESPN Premium',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPNPremium-logo.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/87c30360c988c20002c941a15df39e07/local-02_720.m3u8',
+    ]
+},
+{
+    name:   'Fox Sports',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Fox-logo.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-91.playlist.m3u8',
+    ]
+},
+{
+    name:   'Fox Sports 2',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Fox2-logo.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-93.playlist.m3u8',
+    ]
+},
+{
+    name:   'Fox Sports 3',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Fox3-logo.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/87c30360c988c20002c941a15df39e07/local-92_720.m3u8',
+    ]
+},
+{
+    name:   'TNT Sports',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TNTSports-logo.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/8a6966d9e4c49bb4fc485124c6684264/local-04_720.m3u8',
+    ]
+},
+{
+    name:   'Dsports',
+    poster: 'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/Dsports-logo1.webp',
+    group:  'Deportes',
+    urlsLocal: [],
+    urls: [
+        'http://217.26.190.76:8888/play/a0co/index.m3u8',
+    ]
+},
+
+// ── Infantil ─────────────────────────────────────────
+{
+    name:   'Cartoon Network',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061741/lefz3jg0mhwrxdvply65.webp',
+    group:  'Infantil',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-31.playlist.m3u8',
+    ]
+},
+{
+    name:   'Disney Channel',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891943/pzmczdnn9zq9uc7our7c.webp',
+    group:  'Infantil',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-32.playlist.m3u8',
+    ]
+},
+{
+    name:   'Nickelodeon',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061788/bgyyvgrjkth7n1x8zmcn.webp',
+    group:  'Infantil',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-33.playlist.m3u8',
+    ]
+},
+{
+    name:   'Discovery Kids',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061833/msbmbtpseq463ci7avbs.webp',
+    group:  'Infantil',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-34.playlist.m3u8',
+    ]
+},
+
+// ── Documentales ─────────────────────────────────────
+{
+    name:   'Discovery',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776061916/teqjqkda1pjiznyr4zta.webp',
+    group:  'Documentales',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-44.playlist.m3u8',
+    ]
+},
+{
+    name:   'Animal Planet',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062057/tyz1k8my6xxunrrxwr11.webp',
+    group:  'Documentales',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-45.playlist.m3u8',
+    ]
+},
+{
+    name:   'TLC',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062152/lhepfmececquupneoeef.webp',
+    group:  'Documentales',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/tlc.playlist.m3u8',
+    ]
+},
+{
+    name:   'History',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062203/xsf8rapjp9cniiikfdez.webp',
+    group:  'Documentales',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-40.playlist.m3u8',
+    ]
+},
+
+// ── Películas ─────────────────────────────────────────
+{
+    name:   'Star Channel',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062253/gleqzudmpdpnbif7sbni.webp',
+    group:  'Películas',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-68.playlist.m3u8',
+    ]
+},
+{
+    name:   'TNT',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062314/y9ll10xttejpnjmw3vyy.webp',
+    group:  'Películas',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-66.playlist.m3u8',
+    ]
+},
+{
+    name:   'Cinecanal',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062359/dsxumuv7zxwmkxdrsg4m.webp',
+    group:  'Películas',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-62.playlist.m3u8',
+    ]
+},
+{
+    name:   'Cinemax',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062416/wv8msm94qyqfhxqgorm3.webp',
+    group:  'Películas',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-61.playlist.m3u8',
+    ]
+},
+{
+    name:   'Cine AR',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062474/jjhabegak12stkll8r2y.webp',
+    group:  'Películas',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-20.playlist.m3u8',
+    ]
+},
+{
+    name:   'Space',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062513/w2jojdxejs0mdbt1uaxd.webp',
+    group:  'Películas',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-69.playlist.m3u8',
+    ]
+},
+{
+    name:   'HBO',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062562/hxmwbuszssg0wu4du5mc.webp',
+    group:  'Películas',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-102.playlist.m3u8',
+    ]
+},
+{
+    name:   'Studio Universal',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062609/nb51z9qfpb3fj7b2ujrt.webp',
+    group:  'Películas',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-67.playlist.m3u8',
+    ]
+},
+
+// ── Música ────────────────────────────────────────────
+{
+    name:   'MTV',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062670/vv56s8lcwyxpkpo5lobk.webp',
+    group:  'Música',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/a8a0dc318cc5a076f84bea2206893142/local-50.playlist.m3u8',
+    ]
+},
+{
+    name:   'Quiero Música',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062733/pxu228x52bwgwj3pbjm9.webp',
+    group:  'Música',
+    urlsLocal: [],
+    urls: [
+        'http://201.217.246.42:44310/Live/b10474c9b1ba4a0986b574d1211c065b/local-51_720.m3u8',
+    ]
+},
+{
+    name:   'HTV',
+    poster: 'https://res.cloudinary.com/dl2tftoum/image/upload/v1776062781/fgiwqjhkec2grcmzejs0.webp',
+    group:  'Música',
+    urlsLocal: [],
+    urls: [
+        'http://45.184.109.10/live/69393EAE6ADBC65A68F942022362A202/40.m3u8',
+    ]
+},
+
+// ── MPD/DRM ───────────────────────────────────────────
+{
+    name:      'ESPN Premium',
+    poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/ESPNPremium-logo.webp',
+    group:     'MPD',
+    iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=Rm94X1Nwb3J0c19QcmVtaXVuX0hE&start=true',
+},
+{
+    name:      'TNT Sports',
+    poster:    'https://cdn.jsdelivr.net/gh/OffsideTV/logosweb@main/TNTSports-logo.webp',
+    group:     'MPD',
+    iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=VE5UX1Nwb3J0c19IRA&start=true',
+},
+{
+    name:      'Disney+ 1',
+    poster:    'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891925/yomgjkrbwilo2uah6mlz.webp',
+    group:     'MPD',
+    iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=RVNQTl9VWQ==&start=true',
+},
+{
+    name:      'Disney+ 2',
+    poster:    'https://res.cloudinary.com/dl2tftoum/image/upload/v1775891925/yomgjkrbwilo2uah6mlz.webp',
+    group:     'MPD',
+    iframeUrl: 'https://offsidetv.netlify.app/cvatt.html?get=RVNQTjJfVVk=&start=true',
+},
 ];
 
 // ── ESTADO ────────────────────────────────────────────
