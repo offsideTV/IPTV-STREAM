@@ -3,326 +3,405 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>IPTV — Premium</title>
+    <title>Canales TV</title>
+    <link rel="icon" type="image/png" href="tv-favicon.png">
+
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="cast.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { height: 100%; overflow: hidden; background: #000; color: #fff; }
-        body {
+        /* ══════════════════════════════════════════════════════
+           BASE
+        ══════════════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            height: 100%; overflow: hidden;
+            background: #000; color: #fff;
             font-family: system-ui, -apple-system, sans-serif;
             -webkit-user-select: none; user-select: none;
-            display: flex; flex-direction: column;
+            -webkit-tap-highlight-color: transparent;
         }
 
+        /* ── VIDEO ── */
         #video {
-            display: block;
-            width: 100%;
-            flex: 1 1 0;
-            min-height: 0;
+            position: fixed; inset: 0;
+            width: 100%; height: 100%;
             object-fit: contain; z-index: 1; background: #000;
         }
 
-        /* ── LOADER ── */
-        #loader {
+        /* ── IFRAME MODE ── */
+        #iframe-player {
+            position: fixed; inset: 0; width: 100%; height: 100%;
+            z-index: 1; border: none; background: #000; display: none;
+        }
+        #iframe-player.active { display: block; }
+
+        /* ══════════════════════════════════════════════════════
+           LOADER / ERROR
+        ══════════════════════════════════════════════════════ */
+        #loader, #error-state {
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             z-index: 50;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 0.6rem;
-            background: rgba(0,0,0,0.78); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
-            padding: 1.4rem 2rem; min-width: 160px;
+            background: rgba(0,0,0,0.82); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 18px;
+            padding: 1.6rem 2.2rem; min-width: 160px;
             opacity: 0; pointer-events: none;
             transition: opacity 0.25s ease;
         }
-        #loader.visible { opacity: 1; }
+        #error-state { z-index: 45; }
+        #loader.visible, #error-state.visible { opacity: 1; }
         .spinner {
-            width: 36px; height: 36px; border-radius: 50%;
+            width: 38px; height: 38px; border-radius: 50%;
             border: 3px solid rgba(255,255,255,0.1); border-top-color: #fff;
             animation: spin 0.75s linear infinite;
         }
-        #loader-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); letter-spacing: 0.04em; text-align: center; }
+        #loader-label { font-size: 0.78rem; color: rgba(255,255,255,0.5); letter-spacing: 0.04em; text-align: center; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .err-icon { font-size: 1.8rem; opacity: 0.4; }
+        .err-text { font-size: 0.8rem; color: rgba(255,255,255,0.45); text-align: center; }
 
-        /* ── ERROR ── */
-        #error-state {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 45;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 0.4rem;
-            background: rgba(0,0,0,0.78); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
-            padding: 1.2rem 1.8rem; min-width: 160px;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.25s ease;
-        }
-        #error-state.visible { opacity: 1; }
-        .err-icon { font-size: 1.6rem; opacity: 0.45; }
-        .err-text { font-size: 0.78rem; color: rgba(255,255,255,0.45); text-align: center; }
-
-        /* ── OSD ── */
+        /* ══════════════════════════════════════════════════════
+           OSD — top overlay con info del canal
+        ══════════════════════════════════════════════════════ */
         #osd {
             position: fixed; top: 0; left: 0; right: 0; z-index: 30;
-            padding: 2rem 2.5rem 5rem;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.88) 0%, transparent 100%);
+            padding: 1.4rem 1.6rem 5rem;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
             display: flex; align-items: flex-start; justify-content: space-between;
             opacity: 0; pointer-events: none;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.35s ease;
         }
         #osd.visible { opacity: 1; pointer-events: auto; }
-        .osd-left { display: flex; align-items: flex-start; gap: 1.25rem; }
+        .osd-left { display: flex; align-items: flex-start; gap: 1rem; }
         #osd-logo {
-            width: 64px; height: 64px; border-radius: 14px;
+            width: 52px; height: 52px; border-radius: 12px;
             object-fit: contain; background: rgba(255,255,255,0.08);
-            padding: 8px; flex-shrink: 0;
+            padding: 7px; flex-shrink: 0;
             border: 1px solid rgba(255,255,255,0.1);
         }
         .live-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
-            text-transform: uppercase; color: #f87171; margin-bottom: 5px;
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
+            text-transform: uppercase; color: #f87171; margin-bottom: 4px;
         }
         .live-dot {
-            width: 7px; height: 7px; border-radius: 50%; background: #ef4444;
+            width: 6px; height: 6px; border-radius: 50%; background: #ef4444;
             animation: blink 1.4s ease infinite;
         }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
         #osd-title {
-            font-size: clamp(1.8rem, 4.5vw, 3.2rem);
+            font-size: clamp(1.4rem, 5vw, 3rem);
             font-weight: 800; line-height: 1; letter-spacing: -0.03em;
         }
-        #osd-source-label { font-size: 0.75rem; color: rgba(255,255,255,0.35); margin-top: 6px; font-weight: 500; }
-        #source-switcher { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+        #osd-source-label {
+            font-size: 0.72rem; color: rgba(255,255,255,0.35); margin-top: 5px; font-weight: 500;
+        }
+        #source-switcher { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
         .src-btn {
-            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+            font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em;
             text-transform: uppercase; padding: 4px 10px;
             border-radius: 6px; border: 1px solid rgba(255,255,255,0.18);
             background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
             cursor: pointer; transition: all 0.15s ease;
         }
-        .src-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+        .src-btn:hover, .src-btn:focus { background: rgba(255,255,255,0.18); color: #fff; outline: none; }
         .src-btn.active { background: rgba(255,255,255,0.22); color: #fff; border-color: rgba(255,255,255,0.45); }
-        .osd-actions { display: flex; align-items: flex-start; gap: 0.5rem; padding-top: 4px; }
+        .osd-actions { display: flex; align-items: flex-start; gap: 0.5rem; padding-top: 2px; flex-shrink: 0; }
         .osd-btn {
             display: flex; align-items: center; justify-content: center;
-            width: 40px; height: 40px; border-radius: 10px;
+            width: 42px; height: 42px; border-radius: 11px;
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
             cursor: pointer; color: #fff;
             transition: background 0.15s ease, transform 0.1s ease;
+            flex-shrink: 0;
         }
-        .osd-btn:hover { background: rgba(255,255,255,0.2); }
-        .osd-btn:active { transform: scale(0.93); }
+        .osd-btn:hover, .osd-btn:focus { background: rgba(255,255,255,0.22); outline: none; }
+        .osd-btn:active { transform: scale(0.91); }
         .osd-btn svg { width: 18px; height: 18px; }
 
-        /* ── UI INFERIOR ── */
+        /* ══════════════════════════════════════════════════════
+           UI INFERIOR — panel de canales (overlay)
+        ══════════════════════════════════════════════════════ */
         #ui {
-            flex: 0 0 auto;
-            width: 100%;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
             z-index: 20;
-            padding: 0.6rem 0 calc(0.8rem + env(safe-area-inset-bottom, 0px));
-            background: rgba(0,0,0,0.97);
-            border-top: 1px solid rgba(255,255,255,0.06);
-            overflow: visible;
+            padding-top: 1.6rem;
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+            background: linear-gradient(to top,
+                rgba(0,0,0,0.97) 0%,
+                rgba(0,0,0,0.90) 60%,
+                transparent 100%);
             transform: translateY(100%);
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        #ui.visible {
-            transform: translateY(0);
-        }
+        #ui.visible { transform: translateY(0); }
+
+        /* ── Header: tabs arriba, buscador abajo ── */
         .ui-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 0.7rem; padding: 0 1rem 0 1.2rem;
-        }
-        .ui-header-left { display: flex; align-items: center; gap: 0.75rem; }
-        .ui-title {
-            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
-            text-transform: uppercase; color: rgba(255,255,255,0.38);
-        }
-        .ui-ch-count {
-            font-size: 0.65rem; font-weight: 600;
-            color: rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.05); border-radius: 20px;
-            padding: 2px 8px; border: 1px solid rgba(255,255,255,0.07);
-        }
-        .ui-hint { display: none; }
-        .brand { font-size: 0.82rem; font-weight: 800; letter-spacing: -0.04em; color: rgba(255,255,255,0.3); }
-        .brand em { color: rgba(255,255,255,0.12); font-style: normal; }
-
-        /* ── CHANNEL SHELF ── */
-        .carousel-wrapper {
-            display: flex; align-items: stretch; position: relative;
-            overflow: hidden;
+            display: flex; flex-direction: column; gap: 0;
+            padding: 0 0 0; margin-bottom: 8px;
         }
 
-        /* Flechas laterales — anchas, full-height, glassmorphism */
-        .carousel-arrow {
-            flex-shrink: 0; width: 52px;
+        /* ── TABS ROW ── */
+        .ui-tabs-row {
+            display: flex; align-items: center;
+            padding: 0 12px;
+        }
+
+        /* ── TABS ── */
+        #tabs-row {
+            display: flex; gap: 0;
+            overflow-x: auto; flex: 1; min-width: 0;
+            scrollbar-width: none;
+            padding: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        #tabs-row::-webkit-scrollbar { display: none; }
+        .tab-btn {
+            flex-shrink: 0;
+            font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 7px 14px 8px;
+            border: none; border-bottom: 2px solid transparent;
+            background: none; color: rgba(255,255,255,0.38);
+            cursor: pointer; white-space: nowrap;
+            transition: color 0.18s, border-color 0.18s;
+            outline: none;
+            margin-bottom: -1px;
+        }
+        .tab-btn:hover { color: rgba(255,255,255,0.75); }
+        .tab-btn:focus-visible { color: rgba(255,255,255,0.9); }
+        .tab-btn:active { color: rgba(255,255,255,0.9); }
+        .tab-btn.active {
+            color: #fff; font-weight: 800;
+            border-bottom-color: #fff;
+        }
+
+        /* ── BUSCADOR — fila propia, ancho completo ── */
+        .ui-search-row {
+            padding: 8px 12px 0;
+        }
+        #search-wrap {
+            display: flex; align-items: center;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.13);
+            background: rgba(255,255,255,0.07);
+            width: 100%;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+        #search-wrap:focus-within {
+            background: rgba(255,255,255,0.10);
+            border-color: rgba(255,255,255,0.30);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+        }
+        /* Ícono lupa */
+        #search-icon-btn {
+            flex-shrink: 0;
+            width: 36px; height: 36px;
             display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 100%);
-            border: none; cursor: pointer; color: rgba(255,255,255,0.7);
-            transition: color 0.15s ease, background 0.15s ease;
-            position: relative; z-index: 2;
+            background: none; border: none; cursor: default; pointer-events: none;
+            color: rgba(255,255,255,0.35);
+            outline: none;
+        }
+        #search-wrap:focus-within #search-icon-btn { color: rgba(255,255,255,0.6); }
+        #search-icon-btn svg { width: 14px; height: 14px; stroke-width: 2.2; }
+        /* Input */
+        #search-input {
+            flex: 1; min-width: 0;
+            background: none; border: none; outline: none;
+            color: #fff; font-size: 0.82rem; font-weight: 400;
+            padding: 0;
+            caret-color: #fff;
+            font-family: inherit;
+            letter-spacing: 0.01em;
+        }
+        #search-input::placeholder {
+            color: rgba(255,255,255,0.25);
+            font-weight: 400;
+        }
+        /* Botón limpiar (×) */
+        #search-clear {
+            flex-shrink: 0;
+            width: 22px; height: 22px; margin-right: 7px;
+            border-radius: 50%; border: none; cursor: pointer;
+            background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.6);
+            font-size: 0.8rem; line-height: 1;
+            display: none; align-items: center; justify-content: center;
+            transition: background 0.15s, color 0.15s;
+            font-family: inherit;
+        }
+        #search-clear:hover { background: rgba(255,255,255,0.22); color: #fff; }
+        #search-clear.visible { display: flex; }
+
+        /* ── Sin resultados ── */
+        #no-results {
+            display: none; align-items: center; justify-content: center;
+            padding: 1.1rem 1rem;
+            font-size: 0.8rem; color: rgba(255,255,255,0.3); letter-spacing: 0.02em;
+        }
+        #no-results.visible { display: flex; }
+
+        /* ══════════════════════════════════════════════════════
+           CARRUSEL
+        ══════════════════════════════════════════════════════ */
+        .carousel-wrapper {
+            display: flex; align-items: stretch; position: relative; overflow: hidden;
+        }
+        .carousel-arrow {
+            flex-shrink: 0; width: 44px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 100%);
+            border: none; cursor: pointer; color: rgba(255,255,255,0.65);
+            transition: color 0.15s, background 0.15s;
+            position: relative; z-index: 2; outline: none;
         }
         #arrow-right {
-            background: linear-gradient(to left, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 100%);
+            background: linear-gradient(to left, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 100%);
         }
         .carousel-arrow:hover { color: #fff; }
-        .carousel-arrow:active { color: rgba(255,255,255,0.5); }
-        .carousel-arrow.disabled { opacity: 0.18; pointer-events: none; }
-        .carousel-arrow svg { width: 22px; height: 22px; stroke-width: 2; }
+        .carousel-arrow:focus-visible { color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.4); }
+        .carousel-arrow:active { color: rgba(255,255,255,0.4); }
+        .carousel-arrow.disabled { opacity: 0.15; pointer-events: none; }
+        .carousel-arrow svg { width: 20px; height: 20px; stroke-width: 2.5; }
 
-        /* Track del carrusel */
+        /* Track */
         #carousel {
             display: flex; gap: 10px;
-            overflow: hidden;
+            overflow-x: scroll; overflow-y: visible;
             flex: 1;
-            padding: 6px 4px 10px;
-            min-height: 120px;
-            position: relative;
+            padding: 4px 4px 12px;
+            scrollbar-width: none;
+            scroll-behavior: smooth;
         }
+        #carousel::-webkit-scrollbar { display: none; }
 
-        /* Cards horizontales tipo Netflix/TV shelf */
+        /* ── Cards ── */
         .ch-card {
             flex: 0 0 auto;
-            width: 160px;
+            width: 148px;
             border-radius: 12px;
             overflow: hidden;
             background: rgba(255,255,255,0.06);
             border: 1.5px solid rgba(255,255,255,0.07);
             cursor: pointer; outline: none; position: relative;
-            transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
-                        box-shadow 0.22s ease,
-                        border-color 0.2s ease,
-                        background 0.2s ease;
+            transition: transform 0.2s cubic-bezier(0.34,1.4,0.64,1),
+                        box-shadow 0.2s ease,
+                        border-color 0.18s ease,
+                        background 0.18s ease;
             display: flex; flex-direction: column;
         }
-        .ch-card:hover, .ch-card:focus {
-            transform: translateY(-4px) scale(1.03);
-            border-color: rgba(255,255,255,0.25);
+        .ch-card:hover {
+            transform: translateY(-3px) scale(1.03);
+            border-color: rgba(255,255,255,0.22);
             background: rgba(255,255,255,0.1);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.55);
+            z-index: 5;
+        }
+        .ch-card:focus-visible {
+            border-color: rgba(255,255,255,0.8);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.4), 0 10px 28px rgba(0,0,0,0.55);
             z-index: 5;
         }
         .ch-card.active {
-            border-color: rgba(255,255,255,0.7);
+            border-color: rgba(255,255,255,0.75);
             background: rgba(255,255,255,0.1);
-            box-shadow: 0 0 0 2px rgba(255,255,255,0.18), 0 8px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.15), 0 8px 20px rgba(0,0,0,0.5);
         }
-        .ch-card.active:hover, .ch-card.active:focus {
-            transform: translateY(-4px) scale(1.03);
-        }
-
-        /* Indicador activo — barra inferior */
+        /* Barra activa verde */
         .ch-card.active::after {
             content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-            height: 3px; border-radius: 0 0 12px 12px;
+            height: 3px; border-radius: 0 0 11px 11px;
             background: linear-gradient(to right, #22c55e, #4ade80);
-            box-shadow: 0 0 12px rgba(34,197,94,0.5);
+            box-shadow: 0 0 10px rgba(34,197,94,0.5);
         }
+        /* Shimmer hover */
+        .ch-card::before {
+            content: ''; position: absolute; inset: 0; z-index: 1; border-radius: 11px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 55%);
+            opacity: 0; transition: opacity 0.18s ease; pointer-events: none;
+        }
+        .ch-card:hover::before { opacity: 1; }
 
-        /* Thumbnail con logo grande centrado */
+        /* Thumbnail */
         .ch-thumb {
             width: 100%; aspect-ratio: 16/9;
             background: rgba(255,255,255,0.03);
             display: flex; align-items: center; justify-content: center;
             position: relative; overflow: hidden;
         }
-        .ch-thumb::before {
-            content: ''; position: absolute; inset: 0;
-            background: radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, transparent 70%);
+        .ch-thumb img {
+            width: 68%; height: 68%; object-fit: contain;
+            opacity: 0.85; transition: opacity 0.18s, transform 0.18s;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.4));
+        }
+        .ch-card:hover .ch-thumb img, .ch-card.active .ch-thumb img { opacity: 1; transform: scale(1.06); }
+        .ch-thumb::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 40%;
+            background: linear-gradient(to top, rgba(0,0,0,0.25) 0%, transparent 100%);
             pointer-events: none;
         }
-        .ch-thumb img {
-            width: 72%; height: 72%; object-fit: contain;
-            opacity: 0.88; transition: opacity 0.2s ease, transform 0.2s ease;
-            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
-        }
-        .ch-card:hover .ch-thumb img,
-        .ch-card:focus .ch-thumb img,
-        .ch-card.active .ch-thumb img {
-            opacity: 1;
-            transform: scale(1.05);
-        }
 
-        /* Info inferior */
+        /* Body de la card */
         .ch-body {
-            padding: 0.45rem 0.65rem 0.55rem;
+            padding: 0.4rem 0.6rem 0.5rem;
             display: flex; align-items: center; justify-content: space-between; gap: 4px;
         }
         .ch-name {
-            font-size: 0.74rem; font-weight: 700; color: rgba(255,255,255,0.92);
+            font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.92);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             letter-spacing: -0.01em; flex: 1; min-width: 0;
         }
-        .ch-meta {
-            display: flex; align-items: center; gap: 3px; flex-shrink: 0;
-        }
+        .ch-meta { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
         .ch-src-count {
-            font-size: 0.52rem; font-weight: 700; letter-spacing: 0.06em;
-            text-transform: uppercase;
+            font-size: 0.5rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
             background: rgba(255,255,255,0.1); border-radius: 4px;
             padding: 2px 5px; color: rgba(255,255,255,0.45);
         }
         .ch-badge-mpd {
-            font-size: 0.52rem; font-weight: 700; letter-spacing: 0.08em;
-            text-transform: uppercase; padding: 2px 5px; border-radius: 4px;
+            font-size: 0.5rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+            padding: 2px 5px; border-radius: 4px;
             background: rgba(139,92,246,0.18); color: rgba(167,139,250,0.9);
             border: 1px solid rgba(139,92,246,0.3);
         }
-
-        /* Número de canal flotante */
         .ch-num {
-            position: absolute; top: 6px; left: 7px; z-index: 3;
-            font-size: 0.58rem; font-weight: 800; letter-spacing: 0.04em;
-            color: rgba(255,255,255,0.32);
-            background: rgba(0,0,0,0.45);
-            border-radius: 4px; padding: 1px 5px;
-            backdrop-filter: blur(4px);
-            transition: color 0.2s ease;
+            position: absolute; top: 5px; left: 6px; z-index: 3;
+            font-size: 0.56rem; font-weight: 800; letter-spacing: 0.04em;
+            color: rgba(255,255,255,0.28); background: rgba(0,0,0,0.5);
+            border-radius: 4px; padding: 1px 5px; backdrop-filter: blur(4px);
+            transition: color 0.18s;
         }
-        .ch-card.active .ch-num,
-        .ch-card:hover .ch-num { color: rgba(255,255,255,0.6); }
+        .ch-card.active .ch-num, .ch-card:hover .ch-num { color: rgba(255,255,255,0.65); }
 
-        /* Shimmer en hover */
-        .ch-card::before {
-            content: ''; position: absolute; inset: 0; z-index: 1; border-radius: 12px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 55%);
-            opacity: 0; transition: opacity 0.2s ease; pointer-events: none;
-        }
-        .ch-card:hover::before, .ch-card:focus::before { opacity: 1; }
-
-        /* Gradiente inferior del thumb */
-        .ch-thumb::after {
-            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 45%;
-            background: linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 100%);
-            pointer-events: none;
-        }
-
-        /* ── TOAST ── */
+        /* ══════════════════════════════════════════════════════
+           TOAST
+        ══════════════════════════════════════════════════════ */
         #toast {
-            position: fixed; bottom: 1.5rem; left: 50%; z-index: 200;
-            transform: translateX(-50%) translateY(8px);
-            background: rgba(25,25,25,0.92);
-            border: 1px solid rgba(255,255,255,0.13);
-            backdrop-filter: blur(14px);
-            color: rgba(255,255,255,0.85); font-size: 0.78rem; font-weight: 500;
-            padding: 0.45rem 1.1rem; border-radius: 999px; white-space: nowrap;
+            position: fixed; bottom: 1.4rem; left: 50%; z-index: 200;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(20,20,20,0.95);
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(16px);
+            color: rgba(255,255,255,0.88); font-size: 0.78rem; font-weight: 500;
+            padding: 0.45rem 1.15rem; border-radius: 999px; white-space: nowrap;
             opacity: 0; pointer-events: none;
-            transition: opacity 0.25s ease, transform 0.25s ease;
+            transition: opacity 0.22s ease, transform 0.22s ease;
         }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        /* ── FS HINT ── */
+        /* ══════════════════════════════════════════════════════
+           FS HINT
+        ══════════════════════════════════════════════════════ */
         #fs-hint {
             position: fixed; top: 50%; left: 50%; z-index: 60;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.72); backdrop-filter: blur(12px);
+            background: rgba(0,0,0,0.76); backdrop-filter: blur(14px);
             border: 1px solid rgba(255,255,255,0.12); border-radius: 14px;
             padding: 1.5rem 2rem; text-align: center;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
         }
         #fs-hint.show { opacity: 1; }
         #fs-hint h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
@@ -333,56 +412,93 @@
             padding: 1px 7px; font-family: monospace; font-size: 0.8rem; color: #fff;
         }
 
-        /* carousel — scroll interno sin scrollbar visible */
-        #carousel::-webkit-scrollbar { display: none; }
-        #carousel {
-            scrollbar-width: none;
-            overflow-x: scroll !important;
-            scroll-behavior: smooth;
+        /* ══════════════════════════════════════════════════════
+           RESPONSIVE — MOBILE (≤ 480px)
+        ══════════════════════════════════════════════════════ */
+        @media (max-width: 480px) {
+            /* OSD más compacto */
+            #osd { padding: 1rem 1rem 4rem; }
+            #osd-logo { width: 42px; height: 42px; border-radius: 10px; padding: 6px; }
+            .osd-left { gap: 0.75rem; }
+            #osd-title { font-size: clamp(1.2rem, 6vw, 2rem); }
+            #osd-source-label { font-size: 0.68rem; }
+            .osd-btn { width: 38px; height: 38px; border-radius: 10px; }
+            .osd-btn svg { width: 16px; height: 16px; }
+
+            /* UI panel */
+            #ui { padding-top: 1.2rem; }
+            .ui-header { margin-bottom: 6px; }
+            .ui-tabs-row { padding: 0 10px; }
+            .ui-search-row { padding: 6px 10px 0; }
+
+            /* Tabs más pequeños en mobile */
+            .tab-btn { font-size: 0.6rem; padding: 6px 11px 7px; }
+
+            /* Buscador mobile: altura ajustada */
+            #search-wrap { height: 34px; border-radius: 9px; }
+
+            /* Cards más pequeñas en mobile */
+            .ch-card { width: 118px; }
+            .ch-name { font-size: 0.68rem; }
+            #carousel { gap: 8px; padding: 4px 4px 10px; }
+
+            /* Flechas más delgadas */
+            .carousel-arrow { width: 34px; }
+            .carousel-arrow svg { width: 17px; height: 17px; }
+
+            /* Toast sube un poco por el panel */
+            #toast { bottom: 1rem; }
         }
 
-        /* ── IFRAME MODE ── */
-        #iframe-player {
-            position: fixed; inset: 0; width: 100%; height: 100%;
-            z-index: 1; border: none; background: #000; display: none;
-        }
-        #iframe-player.active { display: block; }
+        /* ══════════════════════════════════════════════════════
+           RESPONSIVE — SMART TV (≥ 1280px, pointer: coarse / none)
+           También aplica en desktop grande con teclado
+        ══════════════════════════════════════════════════════ */
+        @media (min-width: 1280px) {
+            #osd { padding: 2.5rem 3rem 6rem; }
+            #osd-logo { width: 76px; height: 76px; border-radius: 16px; padding: 10px; }
+            .osd-left { gap: 1.5rem; }
+            #osd-title { font-size: clamp(2.2rem, 3.5vw, 4rem); }
+            #osd-source-label { font-size: 0.82rem; margin-top: 8px; }
+            .osd-btn { width: 52px; height: 52px; border-radius: 13px; }
+            .osd-btn svg { width: 22px; height: 22px; }
 
-        /* ── UNMUTE OVERLAY ── */
-        #unmute-overlay {
-            position: fixed; inset: 0; z-index: 100;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
+            .ui-header { margin-bottom: 12px; }
+            .ui-tabs-row { padding: 0 20px; }
+            .ui-search-row { padding: 10px 20px 0; }
+            .tab-btn { font-size: 0.72rem; padding: 8px 18px 9px; }
+            #search-wrap { height: 40px; border-radius: 11px; }
+            #search-icon-btn { width: 40px; height: 40px; }
+            #search-icon-btn svg { width: 16px; height: 16px; }
+            #search-input { font-size: 0.88rem; }
+
+            .ch-card { width: 190px; border-radius: 14px; }
+            .ch-name { font-size: 0.8rem; }
+            .ch-body { padding: 0.5rem 0.75rem 0.6rem; }
+            #carousel { gap: 14px; padding: 6px 6px 14px; }
+            .carousel-arrow { width: 60px; }
+            .carousel-arrow svg { width: 26px; height: 26px; }
+
+            /* Focus visible más prominente en TV */
+            .ch-card:focus-visible {
+                border-color: #fff;
+                box-shadow: 0 0 0 3px rgba(255,255,255,0.5), 0 12px 32px rgba(0,0,0,0.6);
+                transform: translateY(-5px) scale(1.05);
+            }
+            .tab-btn:focus-visible { box-shadow: 0 0 0 3px rgba(255,255,255,0.55); }
         }
-        #unmute-overlay.visible { opacity: 1; pointer-events: auto; }
-        #unmute-btn {
-            display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22);
-            border-radius: 20px; padding: 2rem 2.8rem; cursor: pointer;
-            transition: background 0.15s ease, transform 0.1s ease; color: #fff;
+
+        /* TV con pointer grueso (control remoto) — quitar hovers de mouse */
+        @media (pointer: coarse) and (min-width: 1280px) {
+            .ch-card:hover { transform: none; box-shadow: none; border-color: rgba(255,255,255,0.07); background: rgba(255,255,255,0.06); }
+            .carousel-arrow:hover { color: rgba(255,255,255,0.65); }
         }
-        #unmute-btn:hover { background: rgba(255,255,255,0.18); }
-        #unmute-btn:active { transform: scale(0.96); }
-        #unmute-btn svg { width: 44px; height: 44px; opacity: 0.9; }
-        #unmute-btn span { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; opacity: 0.7; }
     </style>
 </head>
 <body>
 
 <video id="video" autoplay playsinline muted></video>
 
-<div id="unmute-overlay">
-    <button id="unmute-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-            <line x1="23" y1="9" x2="17" y2="15"/>
-            <line x1="17" y1="9" x2="23" y2="15"/>
-        </svg>
-        <span>Tocar para activar sonido</span>
-    </button>
-</div>
 
 <iframe id="iframe-player"
     allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
@@ -425,12 +541,22 @@
 
 <div id="ui">
     <div class="ui-header">
-        <div class="ui-header-left">
-            <div class="ui-title">Canales</div>
-            <div class="ui-ch-count" id="ch-count"></div>
+        <div class="ui-tabs-row">
+            <div id="tabs-row"></div>
         </div>
-        <div class="brand"></div>
+        <div class="ui-search-row">
+            <div id="search-wrap">
+                <button id="search-icon-btn" title="Buscar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </button>
+                <input id="search-input" type="text" placeholder="Buscar canal…" autocomplete="off" spellcheck="false" inputmode="search">
+                <button id="search-clear" title="Limpiar">×</button>
+            </div>
+        </div>
     </div>
+    <div id="no-results">Sin resultados</div>
     <div class="carousel-wrapper">
         <button class="carousel-arrow" id="arrow-left" title="Anterior">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -978,42 +1104,14 @@ let currentSrcIdx  = 0;
 let osdTimer       = null;
 let toastTimer     = null;
 let fsHintShown    = false;
-let isLocalNetwork = false; // se actualiza al init con detección automática
-
-// Proxy solo para HTTP externo — HTTPS y URLs de red local van directo
-function isLocalUrl(url) {
-    return /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url);
-}
+// Proxy solo para HTTP externo — HTTPS va directo
 function proxyUrl(url) {
     if (url.startsWith('https://')) return url;    // HTTPS: directo
-    if (isLocalUrl(url))           return url;    // IP privada: directo (Render no llega)
     return PROXY + encodeURIComponent(url);        // HTTP externo: por proxy
 }
 
-// Detección de red local: intenta hacer un request directo al servidor IPTV.
-// Usamos una imagen/recurso pequeño con XMLHttpRequest (más confiable que fetch no-cors
-// para detectar si la IP es alcanzable en la red local).
-const LOCAL_GATEWAY = 'http://192.168.248.5';
-async function detectLocalNetwork() {
-    return new Promise(resolve => {
-        const xhr = new XMLHttpRequest();
-        const done = (result) => { isLocalNetwork = result; resolve(); };
-        const timeout = setTimeout(() => { xhr.abort(); done(false); }, 2000);
-        xhr.open('GET', LOCAL_GATEWAY + '/ping', true);
-        xhr.onload  = () => { clearTimeout(timeout); done(true); };
-        xhr.onerror = () => { clearTimeout(timeout); done(false); };
-        xhr.onabort = () => done(false);
-        xhr.send();
-    }).then(() => console.log('[IPTV] Red local:', isLocalNetwork));
-}
-
-// Devuelve las URLs efectivas del canal según la red actual
-// En red local: URLs locales primero, luego globales como fallback
-// Fuera: solo globales
+// Devuelve las URLs del canal
 function resolveUrls(ch) {
-    if (isLocalNetwork && ch.urlsLocal && ch.urlsLocal.length > 0) {
-        return [...ch.urlsLocal, ...(ch.urls || [])];
-    }
     return ch.urls || [];
 }
 
@@ -1035,8 +1133,6 @@ const fsHint       = document.getElementById('fs-hint');
 const fsBtn        = document.getElementById('fs-btn');
 const fsIconEnter  = document.getElementById('fs-icon-enter');
 const fsIconExit   = document.getElementById('fs-icon-exit');
-const unmuteOverlay = document.getElementById('unmute-overlay');
-const unmuteBtn    = document.getElementById('unmute-btn');
 
 // ── UTILIDADES ────────────────────────────────────────
 function showLoader(label = 'Conectando…') {
@@ -1066,6 +1162,97 @@ function showOSD(autohide = true) {
 function hideOSD() {
     osd.classList.remove('visible');
     ui.classList.remove('visible');
+}
+
+// ── TABS + BÚSQUEDA ───────────────────────────────────
+const GROUPS_ORDER = ['Todos', ...([...new Set(CHANNELS.map(c => c.group))]) ];
+let activeGroup   = 'Todos';
+let searchQuery   = '';
+
+const tabsRow      = document.getElementById('tabs-row');
+const searchWrap   = document.getElementById('search-wrap');
+const searchInput  = document.getElementById('search-input');
+const searchBtn    = document.getElementById('search-icon-btn');
+const searchClear  = document.getElementById('search-clear');
+const noResults    = document.getElementById('no-results');
+
+// Construir tabs
+GROUPS_ORDER.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (g === 'Todos' ? ' active' : '');
+    btn.textContent = g;
+    btn.addEventListener('click', () => {
+        activeGroup = g;
+        searchQuery = '';
+        searchInput.value = '';
+        searchClear.classList.remove('visible');
+        closeSearch();
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.textContent === g));
+        applyFilter();
+        showOSD();
+    });
+    tabsRow.appendChild(btn);
+});
+
+// El buscador es siempre visible — el botón de ícono ahora solo hace focus
+searchBtn.addEventListener('click', () => {
+    searchInput.focus();
+    showOSD();
+});
+
+function clearSearch() {
+    searchInput.value = '';
+    searchQuery = '';
+    searchClear.classList.remove('visible');
+    applyFilter();
+}
+
+function closeSearch() {
+    searchInput.blur();
+}
+
+// Botón ×
+searchClear.addEventListener('click', () => {
+    clearSearch();
+    searchInput.focus();
+    showOSD();
+});
+
+searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim().toLowerCase();
+    searchClear.classList.toggle('visible', searchQuery.length > 0);
+    // Al buscar saltar a "Todos"
+    if (searchQuery) {
+        activeGroup = 'Todos';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.textContent === 'Todos'));
+    }
+    applyFilter();
+    showOSD();
+});
+
+// Escape cierra buscador
+searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeSearch(); clearSearch(); }
+});
+
+// Filtrar canales visibles
+function getFilteredIndices() {
+    return CHANNELS.reduce((acc, ch, idx) => {
+        const matchGroup  = activeGroup === 'Todos' || ch.group === activeGroup;
+        const matchSearch = !searchQuery || ch.name.toLowerCase().includes(searchQuery);
+        if (matchGroup && matchSearch) acc.push(idx);
+        return acc;
+    }, []);
+}
+
+function applyFilter() {
+    const visible = getFilteredIndices();
+    carousel.querySelectorAll('.ch-card').forEach(card => {
+        card.style.display = visible.includes(parseInt(card.dataset.idx)) ? '' : 'none';
+    });
+    noResults.classList.toggle('visible', visible.length === 0);
+    updateArrowState();
+    carousel.scrollTo({ left: 0, behavior: 'instant' });
 }
 
 // ── CARRUSEL ──────────────────────────────────────────
@@ -1100,23 +1287,17 @@ function buildCarousel() {
         card.addEventListener('keydown', e => { if (e.key === 'Enter') selectChannel(idx); });
         carousel.appendChild(card);
     });
-
-    // Actualizar contador
-    const countEl = document.getElementById('ch-count');
-    if (countEl) countEl.textContent = CHANNELS.length + ' canales';
 }
 
 function updateCarouselActive(idx) {
-    document.querySelectorAll('.ch-card').forEach((c, i) => {
-        c.classList.toggle('active', i === idx);
+    document.querySelectorAll('.ch-card').forEach(c => {
+        c.classList.toggle('active', parseInt(c.dataset.idx) === idx);
     });
-    // Si ya fue parcheado por el init, usar la versión con flechas
     if (window._patchedUpdateCarouselActive) {
         window._patchedUpdateCarouselActive(idx);
         return;
     }
-    // fallback: scroll suave a la card activa
-    const activeCard = carousel.children[idx];
+    const activeCard = carousel.querySelector(`.ch-card[data-idx="${idx}"]`);
     if (activeCard) {
         activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
@@ -1133,14 +1314,13 @@ function updateOSD(chIdx, srcIdx) {
         srcSwitcher.innerHTML = '';
     } else {
         const urls = resolveUrls(ch);
-        osdSrcLabel.textContent = `Fuente ${srcIdx + 1} de ${urls.length}${isLocalNetwork && ch.urlsLocal?.length ? ' · 🏠 local' : ''}`;
+        osdSrcLabel.textContent = `Fuente ${srcIdx + 1} de ${urls.length}`;
         srcSwitcher.innerHTML = '';
         if (urls.length > 1) {
             urls.forEach((u, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'src-btn' + (i === srcIdx ? ' active' : '');
-                const isLocal = ch.urlsLocal && i < ch.urlsLocal.length;
-                btn.textContent = isLocal ? `Fuente ${i + 1} ·local` : `Fuente ${i + 1}`;
+                btn.textContent = `Fuente ${i + 1}`;
                 btn.addEventListener('click', () => {
                     currentSrcIdx = i;
                     playSource(chIdx, i);
@@ -1196,10 +1376,9 @@ function playSource(chIdx, srcIdx) {
             hideLoader();
             video.muted = false;
             video.play().catch(() => {
-                // Navegador bloqueó audio → silenciar y reintentar
+                // Si el navegador bloquea, intentar muteado y luego desmutear
                 video.muted = true;
-                video.play().catch(() => {});
-                unmuteOverlay.classList.add('visible');
+                video.play().then(() => { video.muted = false; }).catch(() => {});
             });
         });
 
@@ -1235,8 +1414,7 @@ function playSource(chIdx, srcIdx) {
         video.muted = false;
         video.play().catch(() => {
             video.muted = true;
-            video.play().catch(() => {});
-            unmuteOverlay.classList.add('visible');
+            video.play().then(() => { video.muted = false; }).catch(() => {});
         });
     } else {
         showError();
@@ -1303,17 +1481,23 @@ document.addEventListener('keydown', e => {
 
     switch (e.key) {
         case 'ArrowRight':
-        case 'ArrowDown':
+        case 'ArrowDown': {
             e.preventDefault();
             showOSD();
-            if (currentChIdx < CHANNELS.length - 1) selectChannel(currentChIdx + 1);
+            const visible = getFilteredIndices();
+            const pos = visible.indexOf(currentChIdx);
+            if (pos < visible.length - 1) selectChannel(visible[pos + 1]);
             break;
+        }
         case 'ArrowLeft':
-        case 'ArrowUp':
+        case 'ArrowUp': {
             e.preventDefault();
             showOSD();
-            if (currentChIdx > 0) selectChannel(currentChIdx - 1);
+            const visible = getFilteredIndices();
+            const pos = visible.indexOf(currentChIdx);
+            if (pos > 0) selectChannel(visible[pos - 1]);
             break;
+        }
         case 'Enter':
             e.preventDefault();
             if (currentChIdx >= 0) selectChannel(currentChIdx);
@@ -1345,13 +1529,6 @@ document.addEventListener('mousemove', () => {
     mouseMoveTimer = setTimeout(hideOSD, 4000);
 });
 document.addEventListener('touchstart', () => { showOSD(); }, { passive: true });
-
-// ── UNMUTE ────────────────────────────────────────────
-unmuteBtn.addEventListener('click', () => {
-    video.muted = false;
-    video.play().catch(() => {});
-    unmuteOverlay.classList.remove('visible');
-});
 
 // ── VIDEO EVENTS ─────────────────────────────────────
 // "waiting" en live streams se dispara seguido — solo mostrar loader si tarda > 2s
@@ -1443,22 +1620,30 @@ function scrollCarouselToIdx(idx) {
 }
 
 window._patchedUpdateCarouselActive = function(idx) {
-    document.querySelectorAll('.ch-card').forEach((c, i) => {
-        c.classList.toggle('active', i === idx);
+    document.querySelectorAll('.ch-card').forEach(c => {
+        c.classList.toggle('active', parseInt(c.dataset.idx) === idx);
     });
-    scrollCarouselToIdx(idx);
+    // Scroll a la card activa si es visible
+    const activeCard = carousel.querySelector(`.ch-card[data-idx="${idx}"]`);
+    if (activeCard && activeCard.style.display !== 'none') {
+        const cardLeft  = activeCard.offsetLeft;
+        const cardRight = cardLeft + activeCard.offsetWidth;
+        const viewLeft  = carousel.scrollLeft;
+        const viewRight = viewLeft + carousel.offsetWidth;
+        if (cardLeft < viewLeft) {
+            carousel.scrollTo({ left: cardLeft, behavior: 'smooth' });
+        } else if (cardRight > viewRight) {
+            carousel.scrollTo({ left: cardRight - carousel.offsetWidth + CARD_GAP, behavior: 'smooth' });
+        }
+    }
 };
 
 // ── INIT ─────────────────────────────────────────────
-// Primero detectar si estamos en red local, luego arrancar
-showLoader('Detectando red…');
-detectLocalNetwork().then(() => {
- 
-    buildCarousel();
-    Cast.init(showToast);
-    updateArrowState();
-    selectChannel(0);
-});
+buildCarousel();
+applyFilter();
+Cast.init(showToast);
+updateArrowState();
+selectChannel(0);
 </script>
 </body>
 </html>
